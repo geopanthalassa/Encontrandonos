@@ -746,16 +746,87 @@ window.DATA = {
     'murciélago', 'pirata', 'guitarra', 'manzana', 'helado', 'volante', 'semilla', 'caballo', 'tortuga', 'paloma'],
 
   // ───────────────── EXPERTO EN NADA ─────────────────
-  experto: [
-    'La historia secreta de las cucharas', 'Por qué los gatos odian los lunes', 'Cómo hablar con las plantas de interior',
-    'El impacto de las medias perdidas en la economía mundial', 'La vida social de las palomas de plaza', 'Técnicas avanzadas para doblar sábanas con elástico',
-    'El lenguaje secreto de los pingüinos', 'Por qué el pan siempre cae del lado de la mermelada', 'Arqueología de los cajones de la cocina',
-    'Psicología de los peluches abandonados', 'La rivalidad histórica entre el tenedor y los palillos', 'Cómo sobrevivir a una invasión de cucarachas con modales',
-    'El arte milenario de esperar el colectivo', 'Neurociencia del antojo de medianoche', 'Geopolítica del control remoto',
-    'Por qué las nubes tienen forma de cosas', 'La ética de comerse la última empanada', 'Historia del bostezo contagioso',
-    'Cómo entrenar a un caracol para competencias', 'Las emociones de los semáforos', 'Física cuántica del calcetín impar',
-    'Ingeniería de la torre de platos sucios', 'El misterio de los audios de WhatsApp de 7 minutos', 'Gastronomía de los dinosaurios',
-    'Cómo enamorar a un alemán con una arepa', 'Por qué en Alemania el tren llega a la hora y en Venezuela «ahorita voy»', 'El impacto cultural de la hallaca en Europa', 'Teoría de la relatividad del «ahorita» venezolano'
+  expertoCats: [
+    { id: 'animales', name: 'Animales raros', items: [
+      { t: 'El tardígrado', f: 'Mide menos de un milímetro y puede sobrevivir al vacío del espacio y a la deshidratación casi total.' },
+      { t: 'El ajolote', f: 'Este anfibio mexicano regenera patas enteras y hasta partes de su corazón.' },
+      { t: 'El ornitorrinco', f: 'Es un mamífero que pone huevos, y los machos tienen un espolón venenoso.' },
+      { t: 'El pangolín', f: 'Es el único mamífero cubierto de escamas, hechas de queratina como nuestras uñas.' },
+      { t: 'El okapi', f: 'Parece mitad cebra, pero su pariente más cercano es la jirafa.' },
+      { t: 'El quokka', f: 'Es un pequeño marsupial australiano famoso porque parece estar siempre sonriendo.' },
+      { t: 'El narval', f: 'Su «cuerno» en realidad es un diente que puede superar los dos metros.' },
+      { t: 'El pez gota', f: 'En las profundidades tiene forma normal; se ve «derretido» al sacarlo por el cambio de presión.' },
+      { t: 'El camarón mantis', f: 'Golpea tan rápido que forma burbujas que implosionan con un destello de calor.' },
+      { t: 'El chigüire (capibara)', f: 'Es el roedor más grande del mundo y vive en los llanos venezolanos.' }
+    ] },
+    { id: 'fiestas', name: 'Fiestas del mundo', items: [
+      { t: 'Holi, en India', f: 'Es el festival de los colores: la gente se lanza polvos de colores para recibir la primavera.' },
+      { t: 'Songkran, en Tailandia', f: 'Es el año nuevo tailandés, en abril, y se celebra con guerras de agua en la calle.' },
+      { t: 'La Tomatina de Buñol', f: 'Cada último miércoles de agosto, miles de personas se lanzan tomates en este pueblo español.' },
+      { t: 'El Día de Muertos en México', f: 'El 1 y 2 de noviembre se arman altares con ofrendas para recibir a los difuntos.' },
+      { t: 'El Hanami en Japón', f: 'Es la costumbre de hacer picnics bajo los cerezos en flor.' },
+      { t: 'Up Helly Aa, en Escocia', f: 'En las islas Shetland desfilan vestidos de vikingos y terminan quemando un barco.' },
+      { t: 'La noche de Krampus', f: 'A principios de diciembre, en los Alpes, desfila el Krampus, un demonio que asusta a los niños que se portaron mal.' },
+      { t: 'Sankt Martin en Alemania', f: 'El 11 de noviembre los niños desfilan de noche con farolitos cantando canciones.' },
+      { t: 'Los Diablos Danzantes de Yare', f: 'En Corpus Christi, en Venezuela, bailan con máscaras de diablo. Es patrimonio de la UNESCO.' },
+      { t: 'El Carnaval de El Callao', f: 'Este carnaval venezolano, con calipso y madamas, es patrimonio de la UNESCO desde 2016.' },
+      { t: 'El Inti Raymi en Perú', f: 'Cada 24 de junio en Cusco se celebra la fiesta inca del Sol.' }
+    ] },
+    { id: 'inventos', name: 'Inventos con historia', items: [
+      { t: 'El velcro', f: 'Su inventor se inspiró en los abrojos que se le pegaban a su perro después de pasear.' },
+      { t: 'Los post-it', f: 'Nacieron de un pegamento «fallido» que pegaba muy poco.' },
+      { t: 'El microondas', f: 'Su inventor notó que una barra de chocolate se derritió en su bolsillo cerca de un aparato de radar.' },
+      { t: 'El abrelatas', f: 'Se inventó décadas después que la lata; antes se abrían con martillo y cincel.' },
+      { t: 'El oficio del despertador humano', f: 'En la Inglaterra industrial había gente que despertaba a otros golpeando sus ventanas con un palo largo.' },
+      { t: 'Los empujadores de trenes de Tokio', f: 'En horas pico, empleados empujan a los pasajeros para que entren y las puertas puedan cerrar.' },
+      { t: 'Los lectores de las fábricas de tabaco', f: 'En Cuba, alguien lee novelas y noticias en voz alta a quienes arman los habanos.' }
+    ] },
+    { id: 'lugares', name: 'Lugares increíbles', items: [
+      { t: 'La isla de Socotra', f: 'Tiene árboles «sangre de dragón» con forma de paraguas que no existen en ningún otro lugar.' },
+      { t: 'El Salar de Uyuni', f: 'Es el salar más grande del mundo; cuando llueve se convierte en un espejo gigante.' },
+      { t: 'Coober Pedy, en Australia', f: 'Es un pueblo minero de ópalos donde mucha gente vive bajo tierra para escapar del calor.' },
+      { t: 'El Monte Roraima', f: 'Este tepuy venezolano de cima plana inspiró la novela «El mundo perdido».' },
+      { t: 'Los Médanos de Coro', f: 'Son dunas de arena junto al mar Caribe, en Venezuela.' },
+      { t: 'Los moáis de Rapa Nui', f: 'Muchos tienen el cuerpo enterrado: no son solo cabezas.' },
+      { t: 'El castillo de Neuschwanstein', f: 'Este castillo de Baviera inspiró el castillo de la Bella Durmiente de Disney.' }
+    ] },
+    { id: 'ciencia', name: 'Ciencia y espacio', items: [
+      { t: 'Por qué el cielo es azul', f: 'La atmósfera dispersa mucho más la luz azul que la roja.' },
+      { t: 'Las auroras boreales', f: 'Son partículas del viento solar chocando con gases de la atmósfera cerca de los polos.' },
+      { t: 'Los agujeros negros', f: 'Su gravedad es tan intensa que ni la luz puede escapar.' },
+      { t: 'La materia oscura', f: 'No la podemos ver, pero sabemos que existe por cómo atrae a las galaxias.' },
+      { t: 'Por qué el pan se pone duro', f: 'El almidón se recristaliza y suelta agua; no es solo que se seque.' }
+    ] },
+    { id: 'absurdos', name: 'Temas absurdos', items: [
+      { t: 'La historia secreta de las cucharas' },
+      { t: 'Por qué los gatos odian los lunes' },
+      { t: 'Cómo hablar con las plantas de interior' },
+      { t: 'El impacto de las medias perdidas en la economía mundial' },
+      { t: 'La vida social de las palomas de plaza' },
+      { t: 'Técnicas avanzadas para doblar sábanas con elástico' },
+      { t: 'El lenguaje secreto de los pingüinos' },
+      { t: 'Por qué el pan siempre cae del lado de la mermelada' },
+      { t: 'Arqueología de los cajones de la cocina' },
+      { t: 'Psicología de los peluches abandonados' },
+      { t: 'La rivalidad histórica entre el tenedor y los palillos' },
+      { t: 'Cómo sobrevivir a una invasión de cucarachas con modales' },
+      { t: 'El arte milenario de esperar el colectivo' },
+      { t: 'Neurociencia del antojo de medianoche' },
+      { t: 'Geopolítica del control remoto' },
+      { t: 'Por qué las nubes tienen forma de cosas' },
+      { t: 'La ética de comerse la última empanada' },
+      { t: 'Historia del bostezo contagioso' },
+      { t: 'Cómo entrenar a un caracol para competencias' },
+      { t: 'Las emociones de los semáforos' },
+      { t: 'Física cuántica del calcetín impar' },
+      { t: 'Ingeniería de la torre de platos sucios' },
+      { t: 'El misterio de los audios de WhatsApp de 7 minutos' },
+      { t: 'Gastronomía de los dinosaurios' },
+      { t: 'Cómo enamorar a un alemán con una arepa' },
+      { t: 'Por qué en Alemania el tren llega a la hora y en Venezuela «ahorita voy»' },
+      { t: 'El impacto cultural de la hallaca en Europa' },
+      { t: 'Teoría de la relatividad del «ahorita» venezolano' }
+    ] }
   ],
   preguntonas: ['¿Y eso cómo lo comprobó científicamente?', '¿Quién financia su investigación?', '¿Qué opina su madre de todo esto?',
     '¿Cuál fue su mayor fracaso en este campo?', '¿Eso no contradice lo que dijo en 2019?', '¿Qué le diría a quienes la llaman fraude?',

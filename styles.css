@@ -531,3 +531,69 @@ body { font-size: 16.5px; }
 .truth { background: #2A1A16; color: var(--cream); border-radius: 14px; padding: 12px 14px; }
 .truth small { color: var(--gold); font-weight: 700; font-size: .8rem; }
 .truth p { margin: 4px 0 0; line-height: 1.45; }
+
+/* Descifra el código */
+.legend { display: grid; gap: 6px; margin: 0 0 14px; color: var(--cream-2); font-size: .92rem; }
+.legend span { display: flex; align-items: center; gap: 10px; }
+.dots { display: inline-flex; gap: 5px; }
+.dot { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid var(--line-2); display: inline-block; }
+.dot--f { background: var(--gold); border-color: var(--gold); }
+.dot--p { border-color: var(--gold); }
+.mycode { display: flex; align-items: center; gap: 12px; background: var(--ink-2); border: 1px solid var(--line); border-radius: 14px; padding: 10px 14px; margin-bottom: 12px; }
+.mycode small { color: var(--cream-3); font-size: .85rem; }
+.mycode b { font-size: 1.2rem; letter-spacing: .12em; flex: 1; text-align: center; font-variant-numeric: tabular-nums; }
+.slots { display: flex; justify-content: center; gap: 10px; margin: 10px 0 16px; }
+.slot { width: 54px; height: 62px; border-radius: 14px; border: 1.5px dashed var(--line-2); display: grid; place-items: center; font-size: 1.8rem; font-weight: 700; }
+.slot.is-full { border-style: solid; border-color: var(--gold); background: rgba(214, 176, 106, .1); }
+.keypad { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 12px; }
+.key { height: 56px; border-radius: 14px; border: 1px solid var(--line-2); background: var(--ink-3); font-size: 1.4rem; font-weight: 700; }
+.key:disabled { opacity: .3; }
+.hist { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 18px; }
+.hist ul { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 6px; }
+.hist li { display: flex; align-items: center; justify-content: space-between; gap: 8px; background: var(--ink-2); border-radius: 10px; padding: 8px 10px; }
+.hist li.empty { color: var(--cream-3); font-size: .85rem; justify-content: flex-start; }
+.guess { font-weight: 700; letter-spacing: .1em; font-variant-numeric: tabular-nums; }
+.hist .dot { width: 10px; height: 10px; }
+.nope { color: #E07784; font-size: .82rem; font-weight: 600; }
+.seg:has(> :nth-child(4)) { grid-template-columns: repeat(4, 1fr); }
+
+/* ───────── Rummikub ───────── */
+.feature--rummy { margin-bottom: 10px; background: linear-gradient(135deg, #3A2A22, var(--ink-2)); }
+.f-tiles { display: flex; gap: 4px; flex: none; }
+.f-tiles i { width: 26px; height: 36px; border-radius: 6px; background: var(--cream); color: #1F1A1A; font-style: normal; font-weight: 800; display: grid; place-items: center; font-size: 1.05rem; box-shadow: 0 3px 0 #CDBB9E; }
+.f-tiles i.r { color: #C62F3E; } .f-tiles i.b { color: #2463B8; }
+.rules { margin: 0 0 8px; padding-left: 18px; color: var(--cream-2); display: grid; gap: 6px; line-height: 1.45; }
+.rules b { color: var(--cream); }
+.rk-status { background: var(--ink-2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; margin-bottom: 10px; color: var(--cream-2); font-size: .95rem; }
+.rk-status b { color: var(--gold); }
+.rtable { display: flex; flex-wrap: wrap; gap: 8px; align-content: flex-start; min-height: 120px; padding: 10px; border-radius: 18px; background: #23382E; border: 1px solid rgba(255,255,255,.06); box-shadow: inset 0 0 40px rgba(0,0,0,.35); margin-bottom: 10px; }
+.empty-table { color: rgba(243,231,211,.5); margin: auto; font-size: .95rem; }
+.rset { display: flex; gap: 3px; padding: 5px; border-radius: 10px; background: rgba(0,0,0,.18); border: 1.5px solid transparent; align-items: center; }
+.rset.is-bad { border-color: #E06070; background: rgba(224,96,112,.12); }
+.rset.is-target { border-color: rgba(214,176,106,.6); border-style: dashed; }
+.rset--new { color: var(--gold); font-weight: 600; font-size: .9rem; padding: 10px 12px; border: 1.5px dashed rgba(214,176,106,.6); background: transparent; }
+.rt-add { width: 30px; height: 44px; border-radius: 7px; border: 1.5px dashed var(--gold); background: transparent; color: var(--gold); font-size: 1.2rem; font-weight: 700; }
+.rt-b { padding: 0; border: 0; background: none; }
+.rt {
+  width: 32px; height: 44px; border-radius: 7px; background: #F7F0E2; display: grid; place-items: center;
+  font-weight: 800; font-size: 1.15rem; box-shadow: 0 3px 0 #CDBB9E, 0 4px 8px rgba(0,0,0,.25); font-variant-numeric: tabular-nums; transition: transform .1s;
+}
+.rt--k { color: #1F1A1A; } .rt--r { color: #C62F3E; } .rt--b { color: #2463B8; } .rt--o { color: #D9821E; }
+.rt--j { color: #8A3FA8; } .rt--j .ic { width: 20px; height: 20px; stroke-width: 2; }
+.rt.is-sel { transform: translateY(-6px); box-shadow: 0 0 0 2.5px var(--gold), 0 8px 14px rgba(0,0,0,.35); }
+.rack-head { display: flex; justify-content: space-between; align-items: center; color: var(--cream-2); font-size: .9rem; }
+.rack-head .link { padding: 6px 0; }
+.rack { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 10px; border-radius: 16px; background: #3A2A22; border: 1px solid rgba(255,255,255,.06); min-height: 70px; }
+.rack .rt { width: 36px; height: 50px; font-size: 1.25rem; }
+.rack--end { background: rgba(0,0,0,.08); }
+.rk-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+.err.center { text-align: center; margin: 4px 0 8px; }
+.grow { justify-content: space-between; }
+.guess { display: inline-flex; gap: 4px; letter-spacing: 0; }
+.gd { width: 26px; height: 30px; border-radius: 7px; display: inline-grid; place-items: center; font-style: normal; font-weight: 700; background: var(--ink-3); border: 1px solid var(--line-2); font-size: .95rem; }
+.gd--ok { background: #3E9B62; border-color: #3E9B62; color: #fff; }
+.gd--near { background: transparent; border: 2px solid var(--gold); color: var(--gold); }
+.gcount { color: var(--cream-3); font-size: .8rem; font-weight: 600; }
+.legend .gd { width: 24px; height: 28px; flex: none; }
+.key.is-tried { background: var(--ink-2); color: var(--cream-3); }
+.hist { grid-template-columns: 1fr; }

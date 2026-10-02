@@ -144,6 +144,16 @@ function reduce(st0, a) {
     st.g.answers = { ...(st.g.answers || {}), [a.answer.slot]: a.answer.value };
     resolveAnswers(st);
   }
+  if (a.guess && st.g && st.g.k === 'codigo' && st.g.phase === 'play' && st.g.turn === a.guess.slot && st.g.rid === a.guess.rid) {
+    const g = st.g, me = a.guess.slot, target = g.codes[other(me)], gu = a.guess.digits;
+    let fijas = 0, picas = 0;
+    gu.forEach((x, i) => { if (target[i] === x) fijas++; else if (target.includes(x)) picas++; });
+    g.hist[me] = [...(g.hist[me] || []), { d: gu, f: fijas, p: picas }];
+    if (fijas === g.len) {
+      g.phase = 'end'; g.winner = me; st.scores[me] += 1;
+      setPenalty(st, other(me), g.rid + 'c');
+    } else g.turn = other(me);
+  }
   if (a.loser) setPenalty(st, a.loser, a.seed || 'x');
   if (a.flash) setFlash(st, a.flash, a.seed);
   if (a.closePenalty) st.penalty = null;
@@ -184,6 +194,8 @@ function onMsg(m) {
     if (isHost()) { S = reduce(S, m.a); commit(); }
   } else if (m.t === 'stroke') {
     Draw.remote(m);
+  } else if (m.t === 'rkwork') {
+    ui.rkPeek = { tk: m.tk, table: m.table, n: m.n }; render();
   } else if (m.t === 'clear') {
     Draw.clear(m.rid, false);
   }
@@ -325,6 +337,7 @@ const ICONS = {
   dict: '<path d="M5 4a2 2 0 0 1 2-2h12v17H7a2 2 0 0 0-2 2z"/><path d="M5 21V4M9 7h6M9 11h4"/>',
   chat: '<path d="M4 5h11v8H8l-4 3z"/><path d="M15 9h5v8l-3-2h-6v-2"/>',
   globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>',
+  lock: '<rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><circle cx="12" cy="15.5" r="1.2" fill="currentColor"/>',
   share: '<path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/>'
 };
 const ic = (n, cls = '') => `<svg class="ic ${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n] || ''}</svg>`;
@@ -359,12 +372,14 @@ const GAMES = {
   diccionario: { name: 'Diccionario mentiroso', icon: 'dict', blurb: 'Palabras raras: ¿definición real o inventada?' },
   improv: { name: 'Sí, y además…', icon: 'chat', blurb: 'Improvisen una escena sin trabarse' },
   traductor: { name: 'Traductor', icon: 'globe', blurb: 'Uno habla en idioma inventado, el otro traduce' },
+  rummy: { name: 'Rummikub', icon: 'tiles', blurb: 'El clásico de fichas, para dos y en tiempo real' },
+  codigo: { name: 'Descifra el código', icon: 'lock', blurb: 'Adivina el código secreto del otro antes que él el tuyo' },
   entrevista: { name: 'Entrevista desde el futuro', icon: 'mic', blurb: 'Año 2045: todo el mundo te conoce por algo rarísimo' }
 };
 const GROUPS = [
   { id: 'improvisar', t: 'Improvisar', keys: ['letra', 'encadenada', 'historia', 'experto', 'improv', 'traductor', 'entrevista'] },
   { id: 'reir', t: 'Para reír', keys: ['mimica', 'tabu', 'dibujo', 'quien', 'prefieres'] },
-  { id: 'nonos', t: 'Ñoños', keys: ['dato', 'mas', 'diccionario'] },
+  { id: 'nonos', t: 'Ñoños', keys: ['codigo', 'dato', 'mas', 'diccionario'] },
   { id: 'conocernos', t: 'Conocernos', keys: ['conoces', 'onda', 'verdades', 'profundas'] },
   { id: 'picante', t: 'Picante', keys: ['sabanas', 'sinfiltro', 'yonunca', 'dado', 'retos'] }
 ];
@@ -389,7 +404,9 @@ function startGame(k) {
     case 'dado': return { screen: 'game', g: { ...base, a: null, t: null } };
     case 'dato': return { screen: 'game', g: { ...base, cat: null, mode: null } };
     case 'letra': case 'encadenada': return { screen: 'game', g: { ...base, phase: 'setup', speed: 6 } };
-    case 'experto': { const p = pick('exp', D.experto.length); return { screen: 'game', used: p.used, g: { ...base, phase: 'ready', idx: p.idx } }; }
+    case 'experto': return { screen: 'game', g: { ...base, phase: 'setup' } };
+    case 'rummy': return { screen: 'game', g: { ...base, phase: 'setup' } };
+    case 'codigo': return { screen: 'game', g: { ...base, phase: 'setup', len: 4, max: 8, hints: 'lugar' } };
     case 'diccionario': return { screen: 'game', g: { ...base, deck: null, answers: {} } };
     case 'improv': return { screen: 'game', g: { ...base, phase: 'ready', q: rnd(D.improv.quienes.length), d: rnd(D.improv.donde.length), p: rnd(D.improv.problema.length) } };
     case 'traductor': { const p = pick('trad', D.traductor.length); return { screen: 'game', used: p.used, g: { ...base, phase: 'ready', idx: p.idx } }; }
@@ -521,9 +538,13 @@ function viewHome() {
   const tab = ui.tab || 'improvisar';
   const gr = GROUPS.find(x => x.id === tab) || GROUPS[0];
   const tile = k => `<button class="tile" data-a="start" data-k="${k}">${ic(GAMES[k].icon, 'ic--tile')}<b>${GAMES[k].name}</b><small>${GAMES[k].blurb}</small></button>`;
-  const soon = tab === 'reir' ? `<div class="tile tile--soon">${ic('tiles', 'ic--tile')}<b>Rummikub</b><small>Próximamente</small></div>` : '';
+  const soon = '';
   return `
   <section class="home">
+    <button class="feature feature--rummy" data-a="start" data-k="rummy">
+      <span class="f-tiles" aria-hidden="true"><i>7</i><i class="r">7</i><i class="b">7</i></span>
+      <span class="f-tx"><b>Rummikub</b><small>El clásico de fichas, para dos y en tiempo real.</small></span>
+    </button>
     <button class="feature" data-a="start" data-k="cartas">
       <span class="f-deck" aria-hidden="true"><i></i><i></i><i></i></span>
       <span class="f-tx"><b>Cartas</b><small>Ocho barajas para hablar, reír y competir.</small></span>
@@ -956,9 +977,24 @@ function viewChain(g) {
 V.letra = viewChain;
 V.encadenada = viewChain;
 
+function expTopic(cat) {
+  const cats = cat === 'sorpresa' ? D.expertoCats : D.expertoCats.filter(c => c.id === cat);
+  const pool = []; cats.forEach(c => c.items.forEach((x, i) => pool.push(c.id + ':' + i)));
+  const used = S.used['exp-' + cat] || [];
+  let free = pool.filter(k => !used.includes(k)); if (!free.length) free = pool;
+  const key = free[rnd(free.length)];
+  return { key, used: ['exp-' + cat, key, pool.length] };
+}
 V.experto = g => {
+  if (g.phase === 'setup') {
+    const opt = c => `<button class="pick" data-a="expcat" data-v="${c.id}">${esc(c.name)}</button>`;
+    return `${gameHead('experto')}<p class="lead">Una persona da una charla de 60 segundos como si fuera la máxima experta mundial. Con los temas reales, al final la app revela el dato verdadero.</p>
+    <p class="label">Elijan el tipo de tema</p><div class="picks">${D.expertoCats.map(opt).join('')}<button class="pick" data-a="expcat" data-v="sorpresa">Sorpresa</button></div>`;
+  }
   const me = mySlot(), ex = g.turn, q = other(ex);
-  const topic = D.experto[g.idx];
+  const [cid, ii] = g.topic.split(':');
+  const cat = D.expertoCats.find(c => c.id === cid), item = cat.items[+ii];
+  const topic = item.t;
   let body = '';
   if (g.phase === 'ready') body = `<p class="detail">${nm(ex)} es la máxima autoridad mundial en este tema. Tiene 60 segundos para dar una charla seria. Después ${nm(q)} hace sus preguntas.</p>${me === ex ? '<button class="btn btn--gold" data-a="expgo">Empezar la charla</button>' : `<p class="wait">Esperando a que ${nm(ex)} suba al escenario…</p>`}`;
   else if (g.phase === 'talk') {
@@ -970,7 +1006,8 @@ V.experto = g => {
       : `<p class="detail">${nm(q)} te va a hacer preguntas incómodas. Responde con total seguridad.</p>`;
     if (g.done) body = `<p class="verdict">${esc(g.done)}</p>`;
   }
-  return `${gameHead('experto')}<article class="card"><span class="card-cat">Conferencia de ${nm(ex)}</span><p class="card-q">${esc(topic)}</p><div class="card-body">${body}</div></article>
+  const truth = item.f && (g.done || g.reveal) ? `<div class="truth"><small>La verdad</small><p>${esc(item.f)}</p></div>` : (item.f && g.phase === 'ask' ? `<button class="link" data-a="exptruth">Revelar el dato real</button>` : '');
+  return `${gameHead('experto', `<button class="chip" data-a="expsetup">${esc(cat.name)}</button>`)}<article class="card"><span class="card-cat">Conferencia de ${nm(ex)} · ${esc(cat.name)}</span><p class="card-q">${esc(topic)}</p><div class="card-body">${body}${truth}</div></article>
   <div class="nav"><button class="btn btn--gold" data-a="expnext">Siguiente conferencia: ${nm(q)}</button></div>`;
 };
 
@@ -1039,6 +1076,149 @@ V.entrevista = g => {
     : `<p class="detail">Eres una celebridad. Responde todo con detalles inventados y mucha seguridad.</p>`;
   return `${gameHead('entrevista')}<article class="card"><span class="card-cat">Año 2045</span><p class="card-q">Todo el mundo conoce a ${nm(star)} por ${esc(D.futuro[g.idx])}.</p><div class="card-body">${body}<button class="btn btn--line" data-a="impwin">Aplausos · +1 a la sintonía</button></div></article>
   <div class="nav"><button class="btn btn--gold" data-a="entnext">Siguiente entrevista: ${nm(host)}</button></div>`;
+};
+
+
+// DESCIFRA EL CÓDIGO (picas y fijas)
+const fb = (g, h) => g.hints === 'sin' ? `<span class="nope">Fallaste</span>` : g.hints === 'lugar' ? dots(h.f, 0, g.len) : dots(h.f, h.p, g.len);
+const dots = (f, p, len) => `<span class="dots">${'<i class="dot dot--f"></i>'.repeat(f)}${'<i class="dot dot--p"></i>'.repeat(p)}${'<i class="dot"></i>'.repeat(len - f - p)}</span>`;
+V.codigo = g => {
+  const me = mySlot(), o = other(me);
+  if (g.phase === 'setup') {
+    const lens = [2, 3, 4, 5].map(n => `<button class="seg-b ${g.len === n ? 'is-on' : ''}" data-a="codelen" data-v="${n}">${n} cifras</button>`).join('');
+    const maxs = [6, 8, 9].map(n => `<button class="seg-b ${g.max === n ? 'is-on' : ''}" data-a="codemax" data-v="${n}">Del 1 al ${n}</button>`).join('');
+    const hm = (v, l) => `<button class="seg-b ${g.hints === v ? 'is-on' : ''}" data-a="codehints" data-v="${v}">${l}</button>`;
+    const combos = (() => { let c = 1; for (let i = 0; i < g.len; i++) c *= g.max - i; return c; })();
+    return `${gameHead('codigo')}<p class="lead">Cada uno recibe un código secreto distinto, sin números repetidos. Por turnos intentan adivinar el del otro. Gana quien lo descifre primero.</p>
+    <p class="label">Pistas</p><div class="seg">${hm('sin', 'Sin pistas')}${hm('lugar', 'Colorear aciertos')}${hm('pistas', 'Completas')}</div>
+    <div class="legend">${g.hints === 'sin' ? `<span>Solo te dice si acertaste o no. Hay ${combos.toLocaleString('es')} combinaciones posibles: mejor jugarlo con códigos cortos.</span>` : g.hints === 'lugar' ? `<span><i class="gd gd--ok">3</i> número en su lugar exacto. Todos tus intentos quedan a la vista.</span>` : `<span><i class="gd gd--ok">3</i> número en su lugar exacto</span><span><i class="gd gd--near">5</i> está en el código, pero en otro lugar</span>`}</div>
+    <p class="label">Largo del código</p><div class="seg">${lens}</div>
+    <p class="label">Números</p><div class="seg">${maxs}</div>
+    <div class="nav"><button class="btn btn--gold big" data-a="codestart">Repartir códigos</button></div>`;
+  }
+  const mine = g.codes[me];
+  const myHist = (g.hist[me] || []).slice().reverse();
+  const theirHist = (g.hist[o] || []);
+  const row = (h, target) => `<li class="grow"><span class="guess">${h.d.map((x, i) => {
+    const cls = g.hints === 'sin' ? '' : target[i] === x ? 'gd--ok' : (g.hints === 'pistas' && target.includes(x) ? 'gd--near' : '');
+    return `<i class="gd ${cls}">${x}</i>`;
+  }).join('')}</span>${g.hints === 'sin' ? '<span class="nope">✗</span>' : `<span class="gcount">${h.f}/${g.len}</span>`}</li>`;
+  const showMine = ui.showCode;
+  const secret = `<div class="mycode"><small>Tu código secreto</small><b>${showMine ? mine.join(' ') : '• '.repeat(g.len).trim()}</b><button class="chip" data-a="codeshow">${showMine ? 'Ocultar' : 'Ver'}</button></div>`;
+  if (g.phase === 'end') {
+    const w = g.winner;
+    return `${gameHead('codigo')}<article class="card"><p class="card-q">${w === me ? '¡Descifraste el código!' : `${nm(w)} descifró tu código`}</p>
+    <div class="card-body"><p class="detail">Lo logró en ${g.hist[w].length} ${g.hist[w].length === 1 ? 'intento' : 'intentos'}. +1 para ${nm(w)}.</p>
+    <p class="detail">Código de ${nm('p1')}: <b>${g.codes.p1.join(' ')}</b> · Código de ${nm('p2')}: <b>${g.codes.p2.join(' ')}</b></p>
+    <button class="btn btn--gold" data-a="codestart">Revancha</button><button class="btn btn--line" data-a="codesetup">Cambiar dificultad</button></div></article>`;
+  }
+  const myTurn = g.turn === me;
+  const cur = (ui.drafts.code && ui.drafts.codeRid === g.rid) ? ui.drafts.code : [];
+  const slots = Array.from({ length: g.len }, (_, i) => `<span class="slot ${cur[i] ? 'is-full' : ''}">${cur[i] || ''}</span>`).join('');
+  const tried = new Set((g.hist[me] || []).flatMap(h => h.d));
+  const keys = Array.from({ length: g.max }, (_, i) => i + 1).map(n => `<button class="key ${tried.has(n) ? 'is-tried' : ''}" data-a="codekey" data-v="${n}" ${!myTurn || cur.includes(n) || cur.length >= g.len ? 'disabled' : ''}>${n}</button>`).join('');
+  return `${gameHead('codigo')}${secret}
+  <p class="who center">${myTurn ? `Tu turno: adivina el código de ${nm(o)}` : `Turno de ${nm(o)}…`}</p>
+  <div class="slots">${slots}</div>
+  <div class="keypad">${keys}</div>
+  <div class="duo"><button class="btn btn--line" data-a="codedel" ${cur.length && myTurn ? '' : 'disabled'}>Borrar</button><button class="btn btn--gold" data-a="codetry" ${cur.length === g.len && myTurn ? '' : 'disabled'}>Probar</button></div>
+  <div class="hist"><div><p class="label">Tus intentos</p><ul>${myHist.map(h => row(h, g.codes[o])).join('') || '<li class="empty">Todavía ninguno</li>'}</ul></div>
+  <div><p class="label">Intentos de ${nm(o)}</p><ul>${theirHist.slice().reverse().map(h => row(h, mine)).join('') || '<li class="empty">Todavía nada</li>'}</ul></div></div>`;
+};
+
+
+// ───────────── RUMMIKUB ─────────────
+const RK_COLORS = ['k', 'r', 'b', 'o'];
+const RK_NAMES = { k: 'negro', r: 'rojo', b: 'azul', o: 'naranja' };
+const rkTile = id => (id >= 104 ? { id, j: true, n: 0, c: 'j' } : { id, j: false, n: (id % 13) + 1, c: RK_COLORS[Math.floor(id / 13) % 4] });
+// Analiza un grupo de fichas: devuelve { ok, kind, value, order }
+function rkAnalyze(ids) {
+  const tiles = ids.map(rkTile);
+  const jk = tiles.filter(t => t.j), nm2 = tiles.filter(t => !t.j);
+  const len = tiles.length;
+  if (len < 3) return { ok: false, value: 0, order: ids, why: 'Mínimo 3 fichas' };
+  if (!nm2.length) return { ok: true, kind: 'grupo', value: 0, order: ids };
+  // Grupo: mismo número, colores distintos, máximo 4
+  const sameN = nm2.every(t => t.n === nm2[0].n);
+  const colors = new Set(nm2.map(t => t.c));
+  if (sameN && colors.size === nm2.length && len <= 4) {
+    const order = [...nm2.sort((a, b) => RK_COLORS.indexOf(a.c) - RK_COLORS.indexOf(b.c)).map(t => t.id), ...jk.map(t => t.id)];
+    return { ok: true, kind: 'grupo', value: nm2[0].n * len, order };
+  }
+  // Escalera: mismo color, números consecutivos, comodines rellenan huecos
+  const sameC = nm2.every(t => t.c === nm2[0].c);
+  const ns = nm2.map(t => t.n).sort((a, b) => a - b);
+  const distinct = new Set(ns).size === ns.length;
+  if (sameC && distinct && len <= 13) {
+    const lo = ns[0], hi = ns[ns.length - 1];
+    const gaps = hi - lo + 1 - ns.length;
+    if (gaps <= jk.length) {
+      let extra = jk.length - gaps;
+      let start = lo, end = hi;
+      while (extra > 0 && end < 13) { end++; extra--; }
+      while (extra > 0 && start > 1) { start--; extra--; }
+      if (extra === 0) {
+        const byN = {}; nm2.forEach(t => (byN[t.n] = t.id));
+        const js = jk.map(t => t.id); const order = []; let value = 0;
+        for (let n = start; n <= end; n++) { order.push(byN[n] !== undefined ? byN[n] : js.shift()); value += n; }
+        return { ok: true, kind: 'escalera', value, order };
+      }
+    }
+  }
+  return { ok: false, value: 0, order: ids, why: 'No es un grupo ni una escalera' };
+}
+const rkPoints = ids => ids.reduce((s, id) => s + (id >= 104 ? 30 : rkTile(id).n), 0);
+const tileHtml = (id, extra = '') => { const t = rkTile(id); return `<span class="rt rt--${t.c} ${extra}">${t.j ? ic('mask') : t.n}</span>`; };
+
+function rkWork(g) {
+  const me = mySlot();
+  if (!ui.rk || ui.rk.tk !== g.tk) {
+    ui.rk = { tk: g.tk, table: clone(g.table || []), rack: [...(g.racks?.[me] || [])], orig: [...(g.racks?.[me] || [])], sel: [], err: '' };
+  }
+  return ui.rk;
+}
+function rkSync() { const w = ui.rk; if (w && T) T.send({ t: 'rkwork', from: myId, tk: w.tk, table: w.table, n: w.rack.length }); }
+function rkSortRack(rack, mode) {
+  const key = id => { const t = rkTile(id); return mode === 'num' ? (t.j ? 999 : t.n * 10 + RK_COLORS.indexOf(t.c)) : (t.j ? 999 : RK_COLORS.indexOf(t.c) * 100 + t.n); };
+  return rack.slice().sort((a, b) => key(a) - key(b));
+}
+V.rummy = g => {
+  const me = mySlot(), o = other(me);
+  if (g.phase === 'setup') {
+    return `${gameHead('rummy')}<p class="lead">Rummikub para dos: cada uno empieza con 14 fichas y gana quien se quede sin ninguna.</p>
+    <ul class="rules"><li><b>Grupo:</b> 3 o 4 fichas del mismo número y distinto color.</li><li><b>Escalera:</b> 3 o más números seguidos del mismo color.</li><li>Tu <b>primera bajada</b> tiene que sumar 30 puntos o más, solo con tus fichas.</li><li>Después puedes reacomodar la mesa como quieras, siempre que al terminar todo quede válido.</li><li>Si no puedes o no quieres bajar, robas una ficha.</li><li>El comodín reemplaza cualquier ficha.</li></ul>
+    <div class="nav"><button class="btn btn--gold big" data-a="rkdeal">Repartir fichas</button></div>`;
+  }
+  if (g.phase === 'end') {
+    const w = g.winner, l = other(w);
+    return `${gameHead('rummy')}<article class="card"><p class="card-q">${w === me ? '¡Ganaste!' : `Ganó ${nm(w)}`}</p><div class="card-body">
+    <p class="detail">${nm(l)} se quedó con ${g.racks[l].length} fichas (${rkPoints(g.racks[l])} puntos). +1 para ${nm(w)}.</p>
+    <div class="rack rack--end">${g.racks[l].map(id => tileHtml(id)).join('')}</div>
+    <button class="btn btn--gold" data-a="rkdeal">Otra partida</button></div></article>`;
+  }
+  const myTurn = g.turn === me;
+  const w = myTurn ? rkWork(g) : null;
+  const peek = !myTurn && ui.rkPeek && ui.rkPeek.tk === g.tk ? ui.rkPeek : null;
+  const table = myTurn ? w.table : peek ? peek.table : g.table;
+  const rack = myTurn ? w.rack : g.racks[me];
+  const sel = myTurn ? w.sel : [];
+  const melded = g.melded?.[me];
+  const played = myTurn ? w.orig.filter(id => !w.rack.includes(id)) : [];
+  const setsHtml = table.map((set, i) => {
+    const an = rkAnalyze(set);
+    const ordered = an.ok ? an.order : set;
+    return `<div class="rset ${an.ok ? '' : 'is-bad'} ${myTurn && sel.length ? 'is-target' : ''}" ${myTurn ? `data-a="rkset" data-i="${i}"` : ''}>${ordered.map(id => `<button class="rt-b" ${myTurn && (melded || played.includes(id)) ? `data-a="rktile" data-id="${id}"` : 'tabindex="-1"'}>${tileHtml(id, sel.includes(id) ? 'is-sel' : '')}</button>`).join('')}${myTurn && sel.length ? `<button class="rt-add" data-a="rkset" data-i="${i}" aria-label="Agregar aquí">+</button>` : ''}</div>`;
+  }).join('');
+  const rackHtml = rkSortRack(rack, ui.rkSort || 'color').map(id => `<button class="rt-b" ${myTurn ? `data-a="rktile" data-id="${id}"` : 'tabindex="-1"'}>${tileHtml(id, sel.includes(id) ? 'is-sel' : '')}</button>`).join('');
+  const ptsPlayed = played.length && !melded ? table.filter(set => set.some(id => played.includes(id))).reduce((s, set) => { const a = rkAnalyze(set); return s + (a.ok ? a.value : 0); }, 0) : 0;
+  return `${gameHead('rummy', `<span class="chip">${g.pool.length} en la bolsa</span>`)}
+  <div class="rk-status">${myTurn ? `<b>Tu turno.</b> ${melded ? 'Arma, reacomoda o roba.' : `Primera bajada: necesitas 30 puntos${played.length ? ` · llevas ${ptsPlayed}` : ''}.`}` : `Turno de ${nm(o)}… ${peek ? 'está moviendo fichas en vivo' : 'pensando'} · le quedan ${peek ? peek.n : g.racks[o].length} fichas.`}</div>
+  <div class="rtable">${setsHtml || '<p class="empty-table">La mesa está vacía.</p>'}${myTurn && sel.length ? `<button class="rset rset--new" data-a="rknew">+ Nuevo grupo con ${sel.length === 1 ? 'la ficha' : `las ${sel.length} fichas`}</button>` : ''}</div>
+  ${myTurn && w.err ? `<p class="err center">${esc(w.err)}</p>` : ''}
+  <div class="rack-head"><span>Tus fichas · ${rack.length}</span><button class="link" data-a="rksort">Ordenar por ${(ui.rkSort || 'color') === 'color' ? 'número' : 'color'}</button></div>
+  <div class="rack">${rackHtml}</div>
+  ${myTurn ? `<div class="rk-actions">${sel.length ? `<button class="btn btn--line" data-a="rkback">Devolver al atril</button>` : `<button class="btn btn--line" data-a="rkundo" ${played.length || JSON.stringify(w.table) !== JSON.stringify(g.table) ? '' : 'disabled'}>Deshacer</button>`}
+  ${played.length ? `<button class="btn btn--gold" data-a="rkend">Terminar turno</button>` : `<button class="btn btn--gold" data-a="rkdraw">${g.pool.length ? 'Robar y pasar' : 'Pasar'}</button>`}</div>` : ''}`;
 };
 
 // FINAL
@@ -1424,6 +1604,83 @@ const H = {
   knowsend() { const v = (ui.drafts['know-' + S.g.rid] || '').trim(); if (!v) return toast('Escribe algo antes de enviar.'); dispatch({ answer: { slot: mySlot(), value: v, rid: S.g.rid } }); },
   // onda
   ondasend() { const v = +(ui.drafts['onda-' + S.g.rid] ?? 5); dispatch({ answer: { slot: mySlot(), value: v, rid: S.g.rid } }); },
+  // rummikub
+  rkdeal() {
+    const all = shuffle([...Array(106).keys()]);
+    const g = S.g; const first = g.winner ? other(g.winner) : (g.turn || mySlot() || 'p1');
+    dispatch({ patch: { phase: 'play', racks: { p1: all.slice(0, 14), p2: all.slice(14, 28) }, pool: all.slice(28), table: [], melded: { p1: false, p2: false }, turn: first, tk: rid(), winner: null, rid: rid() } });
+  },
+  rktile(d) {
+    const w = ui.rk; if (!w) return; const id = +d.id;
+    w.err = '';
+    w.sel = w.sel.includes(id) ? w.sel.filter(x => x !== id) : [...w.sel, id];
+    render();
+  },
+  rkset(d, el, e) {
+    const w = ui.rk; if (!w || !w.sel.length) return;
+    if (e.target.closest('[data-a=rktile]')) return;
+    const i = +d.i;
+    // quitar las seleccionadas de donde estén y sumarlas al grupo
+    w.table = w.table.map(set => set.filter(id => !w.sel.includes(id)));
+    w.rack = w.rack.filter(id => !w.sel.includes(id));
+    w.table[i] = [...w.table[i], ...w.sel];
+    w.table = w.table.filter(set => set.length);
+    w.sel = []; w.err = ''; rkSync(); render();
+  },
+  rknew() {
+    const w = ui.rk; if (!w || !w.sel.length) return;
+    w.table = w.table.map(set => set.filter(id => !w.sel.includes(id))).filter(set => set.length);
+    w.rack = w.rack.filter(id => !w.sel.includes(id));
+    w.table.push([...w.sel]); w.sel = []; w.err = ''; rkSync(); render();
+  },
+  rkback() {
+    const w = ui.rk; if (!w) return;
+    const ok = w.sel.filter(id => w.orig.includes(id));
+    if (ok.length < w.sel.length) w.err = 'Las fichas que ya estaban en la mesa no pueden volver a tu atril.';
+    w.table = w.table.map(set => set.filter(id => !ok.includes(id))).filter(set => set.length);
+    w.rack = [...w.rack, ...ok.filter(id => !w.rack.includes(id))];
+    w.sel = []; rkSync(); render();
+  },
+  rkundo() { ui.rk = null; render(); rkWork(S.g); rkSync(); },
+  rksort() { ui.rkSort = (ui.rkSort || 'color') === 'color' ? 'num' : 'color'; render(); },
+  rkdraw() {
+    const g = S.g, me = mySlot(); if (g.turn !== me) return;
+    const pool = g.pool.slice(); const t = pool.pop();
+    const racks = { ...g.racks, [me]: t === undefined ? g.racks[me] : [...g.racks[me], t] };
+    ui.rk = null;
+    dispatch({ patch: { pool, racks, turn: other(me), tk: rid() } });
+  },
+  rkend() {
+    const g = S.g, me = mySlot(), w = ui.rk; if (!w || g.turn !== me) return;
+    const bad = w.table.find(set => !rkAnalyze(set).ok);
+    if (bad) { w.err = 'Hay grupos inválidos (marcados en rojo). Arréglalos o toca Deshacer.'; return render(); }
+    const played = w.orig.filter(id => !w.rack.includes(id));
+    if (!played.length) { w.err = 'Baja al menos una ficha o roba.'; return render(); }
+    if (!g.melded[me]) {
+      const pts = w.table.filter(set => set.some(id => played.includes(id))).reduce((s, set) => s + rkAnalyze(set).value, 0);
+      if (pts < 30) { w.err = `Tu primera bajada suma ${pts}. Necesitas al menos 30.`; return render(); }
+    }
+    const table = w.table.map(set => rkAnalyze(set).order);
+    const racks = { ...g.racks, [me]: w.rack };
+    ui.rk = null;
+    const a = { patch: { table, racks, melded: { ...g.melded, [me]: true }, turn: other(me), tk: rid() } };
+    if (!w.rack.length) { a.patch.phase = 'end'; a.patch.winner = me; a.score = { [me]: 1 }; a.loser = other(me); a.seed = g.rid + 'rk'; }
+    dispatch(a);
+  },
+  // código
+  codelen(d) { dispatch({ patch: { len: +d.v } }); },
+  codemax(d) { dispatch({ patch: { max: +d.v } }); },
+  codehints(d) { dispatch({ patch: { hints: d.v } }); },
+  codestart() {
+    const g = S.g, mk = () => shuffle([...Array(g.max).keys()].map(i => i + 1)).slice(0, g.len);
+    ui.drafts.code = []; ui.showCode = false;
+    dispatch({ patch: { phase: 'play', codes: { p1: mk(), p2: mk() }, hist: { p1: [], p2: [] }, turn: g.winner ? other(g.winner) : (g.turn || 'p1'), winner: null, rid: rid() } });
+  },
+  codesetup() { dispatch({ patch: { phase: 'setup', rid: rid() } }); },
+  codeshow() { ui.showCode = !ui.showCode; render(); },
+  codekey(d) { const g = S.g; if (ui.drafts.codeRid !== g.rid) { ui.drafts.code = []; ui.drafts.codeRid = g.rid; } if (ui.drafts.code.length < g.len && !ui.drafts.code.includes(+d.v)) ui.drafts.code = [...ui.drafts.code, +d.v]; render(); },
+  codedel() { ui.drafts.code = (ui.drafts.code || []).slice(0, -1); render(); },
+  codetry() { const g = S.g, c = ui.drafts.code || []; if (c.length !== g.len) return; ui.drafts.code = []; dispatch({ guess: { slot: mySlot(), digits: c, rid: g.rid } }); },
   // pestañas
   tab(d) { ui.tab = d.v; try { localStorage.setItem('enc:tab', d.v); } catch {} render(); },
   // cadena de letras / encadenada
@@ -1444,7 +1701,10 @@ const H = {
   // experto
   expgo() { dispatch({ patch: { phase: 'talk', rid: rid(), qs: shuffle([...Array(D.preguntonas.length).keys()]).slice(0, 3), done: false } }); },
   expask() { dispatch({ patch: { phase: 'ask' } }); },
-  expnext() { const p = pick('exp', D.experto.length); dispatch({ used: p.used, g: { k: 'experto', rid: rid(), turn: other(S.g.turn), phase: 'ready', idx: p.idx } }); },
+  expcat(d) { const t = expTopic(d.v); dispatch({ used: t.used, g: { k: 'experto', rid: rid(), turn: S.g.turn || mySlot(), phase: 'ready', cat: d.v, topic: t.key } }); },
+  expnext() { const t = expTopic(S.g.cat); dispatch({ used: t.used, g: { k: 'experto', rid: rid(), turn: other(S.g.turn), phase: 'ready', cat: S.g.cat, topic: t.key } }); },
+  expsetup() { dispatch({ g: { k: 'experto', rid: rid(), turn: S.g.turn, phase: 'setup' } }); },
+  exptruth() { dispatch({ patch: { reveal: true } }); },
   // diccionario
   diccdeck(d) { const deck = d.v || S.g.deck; const pool = D.diccionario.map((x, i) => i).filter(i => deck === 'todas' || D.diccionario[i].c === deck); const p = pickFrom('dicc-' + deck, pool); dispatch({ used: p.used, g: { k: 'diccionario', rid: rid(), turn: d.v ? (S.g.turn || mySlot()) : other(S.g.turn), deck, idx: p.idx, answers: {} } }); },
   diccnext() { H.diccdeck({}); },
@@ -1541,5 +1801,5 @@ render = function () { watchDice(); renderBase(); };
 // ───────────── inicio ─────────────
 const c0 = roomFromUrl();
 if (c0) enterRoom(c0); else render();
-window.__enc = { get S() { return S; }, get present() { return present; }, isHost };
+window.__enc = { get S() { return S; }, get present() { return present; }, isHost, dispatch };
 })();
