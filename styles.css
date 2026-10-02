@@ -603,3 +603,8 @@ body { font-size: 16.5px; }
 .brand { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 4px 0 16px; }
 .brand svg { width: 46px; height: 29px; }
 .brand span { font-family: var(--serif); font-style: italic; font-size: 1.5rem; font-weight: 500; }
+.brand-tx { display: grid; line-height: 1.1; }
+.brand-tx b { font-family: var(--serif); font-style: italic; font-size: 1.5rem; font-weight: 500; }
+.brand-tx small { color: var(--cream-2); font-size: .85rem; margin-top: 2px; }
+.brand span.brand-tx { font-style: normal; font-size: inherit; }
+.brand-tx small { font-family: var(--sans); font-style: normal; }

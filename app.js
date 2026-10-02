@@ -481,7 +481,7 @@ function viewLanding() {
   <main class="landing">
     ${rings(true)}
     <h1 class="title">Encontrándonos</h1>
-    <p class="tagline">Dos personas. Una videollamada. Cero excusas.</p>
+    <p class="tagline">Entre juegos, risas y sintonía</p>
     <div class="panel form">
       <label class="field">
         <span>Tu nombre</span>
@@ -541,7 +541,7 @@ function viewHome() {
   const soon = '';
   return `
   <section class="home">
-    <div class="brand"><svg viewBox="0 0 64 40" aria-hidden="true"><circle cx="25" cy="20" r="14" fill="none" stroke="#D6B06A" stroke-width="3"/><circle cx="39" cy="20" r="14" fill="none" stroke="#C24D5C" stroke-width="3"/></svg><span>Encontrándonos</span></div>
+    <div class="brand"><svg viewBox="0 0 64 40" aria-hidden="true"><circle cx="25" cy="20" r="14" fill="none" stroke="#D6B06A" stroke-width="3"/><circle cx="39" cy="20" r="14" fill="none" stroke="#C24D5C" stroke-width="3"/></svg><span class="brand-tx"><b>Encontrándonos</b><small>Entre juegos, risas y sintonía</small></span></div>
     <button class="feature feature--rummy" data-a="start" data-k="rummy">
       <span class="f-tiles" aria-hidden="true"><i>7</i><i class="r">7</i><i class="b">7</i></span>
       <span class="f-tx"><b>Rummikub</b><small>El clásico de fichas, para dos y en tiempo real.</small></span>
@@ -1121,7 +1121,7 @@ V.codigo = g => {
   <div class="keypad">${keys}</div>
   <div class="duo"><button class="btn btn--line" data-a="codedel" ${cur.length && myTurn ? '' : 'disabled'}>Borrar</button><button class="btn btn--gold" data-a="codetry" ${cur.length === g.len && myTurn ? '' : 'disabled'}>Probar</button></div>
   <div class="hist"><div><p class="label">Tus intentos</p><ul>${myHist.map(h => row(h, g.codes[o])).join('') || '<li class="empty">Todavía ninguno</li>'}</ul></div>
-  <div><p class="label">Intentos de ${nm(o)}</p><ul>${theirHist.slice().reverse().map(h => row(h, mine)).join('') || '<li class="empty">Todavía nada</li>'}</ul></div></div>`;
+</div>`;
 };
 
 
