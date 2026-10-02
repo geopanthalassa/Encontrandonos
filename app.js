@@ -405,8 +405,8 @@ function startGame(k) {
     case 'dato': return { screen: 'game', g: { ...base, cat: null, mode: null } };
     case 'letra': case 'encadenada': return { screen: 'game', g: { ...base, phase: 'setup', speed: 6 } };
     case 'experto': return { screen: 'game', g: { ...base, phase: 'setup' } };
-    case 'rummy': return { screen: 'game', g: { ...base, phase: 'setup' } };
-    case 'codigo': return { screen: 'game', g: { ...base, phase: 'setup', len: 4, max: 8, hints: 'lugar' } };
+    case 'rummy': return { screen: 'game', g: { ...base, phase: 'setup', drawFirst: true } };
+    case 'codigo': return { screen: 'game', g: { ...base, phase: 'setup', len: 5, max: 5, hints: 'lugar' } };
     case 'diccionario': return { screen: 'game', g: { ...base, deck: null, answers: {} } };
     case 'improv': return { screen: 'game', g: { ...base, phase: 'ready', q: rnd(D.improv.quienes.length), d: rnd(D.improv.donde.length), p: rnd(D.improv.problema.length) } };
     case 'traductor': { const p = pick('trad', D.traductor.length); return { screen: 'game', used: p.used, g: { ...base, phase: 'ready', idx: p.idx } }; }
@@ -541,6 +541,7 @@ function viewHome() {
   const soon = '';
   return `
   <section class="home">
+    <div class="brand"><svg viewBox="0 0 64 40" aria-hidden="true"><circle cx="25" cy="20" r="14" fill="none" stroke="#D6B06A" stroke-width="3"/><circle cx="39" cy="20" r="14" fill="none" stroke="#C24D5C" stroke-width="3"/></svg><span>Encontrándonos</span></div>
     <button class="feature feature--rummy" data-a="start" data-k="rummy">
       <span class="f-tiles" aria-hidden="true"><i>7</i><i class="r">7</i><i class="b">7</i></span>
       <span class="f-tx"><b>Rummikub</b><small>El clásico de fichas, para dos y en tiempo real.</small></span>
@@ -1085,15 +1086,12 @@ const dots = (f, p, len) => `<span class="dots">${'<i class="dot dot--f"></i>'.r
 V.codigo = g => {
   const me = mySlot(), o = other(me);
   if (g.phase === 'setup') {
-    const lens = [2, 3, 4, 5].map(n => `<button class="seg-b ${g.len === n ? 'is-on' : ''}" data-a="codelen" data-v="${n}">${n} cifras</button>`).join('');
-    const maxs = [6, 8, 9].map(n => `<button class="seg-b ${g.max === n ? 'is-on' : ''}" data-a="codemax" data-v="${n}">Del 1 al ${n}</button>`).join('');
+    const lens = [4, 5, 6, 8].map(n => `<button class="seg-b ${g.len === n ? 'is-on' : ''}" data-a="codelen" data-v="${n}">${n}</button>`).join('');
     const hm = (v, l) => `<button class="seg-b ${g.hints === v ? 'is-on' : ''}" data-a="codehints" data-v="${v}">${l}</button>`;
-    const combos = (() => { let c = 1; for (let i = 0; i < g.len; i++) c *= g.max - i; return c; })();
-    return `${gameHead('codigo')}<p class="lead">Cada uno recibe un código secreto distinto, sin números repetidos. Por turnos intentan adivinar el del otro. Gana quien lo descifre primero.</p>
-    <p class="label">Pistas</p><div class="seg">${hm('sin', 'Sin pistas')}${hm('lugar', 'Colorear aciertos')}${hm('pistas', 'Completas')}</div>
-    <div class="legend">${g.hints === 'sin' ? `<span>Solo te dice si acertaste o no. Hay ${combos.toLocaleString('es')} combinaciones posibles: mejor jugarlo con códigos cortos.</span>` : g.hints === 'lugar' ? `<span><i class="gd gd--ok">3</i> número en su lugar exacto. Todos tus intentos quedan a la vista.</span>` : `<span><i class="gd gd--ok">3</i> número en su lugar exacto</span><span><i class="gd gd--near">5</i> está en el código, pero en otro lugar</span>`}</div>
-    <p class="label">Largo del código</p><div class="seg">${lens}</div>
-    <p class="label">Números</p><div class="seg">${maxs}</div>
+    return `${gameHead('codigo')}<p class="lead">Cada uno recibe los mismos números, pero mezclados en un orden secreto distinto. Por turnos intentan adivinar el orden del otro. Gana quien lo descifre primero.</p>
+    <p class="label">¿Con cuántos números? (del 1 al…)</p><div class="seg seg--4">${lens}</div>
+    <p class="label">Pistas</p><div class="seg seg--2">${hm('lugar', 'Colorear aciertos')}${hm('sin', 'Sin pistas')}</div>
+    <div class="legend">${g.hints === 'sin' ? `<span>Solo te dice si acertaste el orden completo o no.</span>` : `<span><i class="gd gd--ok">3</i> número en su lugar exacto. Todos tus intentos quedan a la vista.</span>`}</div>
     <div class="nav"><button class="btn btn--gold big" data-a="codestart">Repartir códigos</button></div>`;
   }
   const mine = g.codes[me];
@@ -1116,7 +1114,7 @@ V.codigo = g => {
   const cur = (ui.drafts.code && ui.drafts.codeRid === g.rid) ? ui.drafts.code : [];
   const slots = Array.from({ length: g.len }, (_, i) => `<span class="slot ${cur[i] ? 'is-full' : ''}">${cur[i] || ''}</span>`).join('');
   const tried = new Set((g.hist[me] || []).flatMap(h => h.d));
-  const keys = Array.from({ length: g.max }, (_, i) => i + 1).map(n => `<button class="key ${tried.has(n) ? 'is-tried' : ''}" data-a="codekey" data-v="${n}" ${!myTurn || cur.includes(n) || cur.length >= g.len ? 'disabled' : ''}>${n}</button>`).join('');
+  const keys = Array.from({ length: g.max }, (_, i) => i + 1).map(n => `<button class="key" data-a="codekey" data-v="${n}" ${!myTurn || cur.includes(n) || cur.length >= g.len ? 'disabled' : ''}>${n}</button>`).join('');
   return `${gameHead('codigo')}${secret}
   <p class="who center">${myTurn ? `Tu turno: adivina el código de ${nm(o)}` : `Turno de ${nm(o)}…`}</p>
   <div class="slots">${slots}</div>
@@ -1187,6 +1185,8 @@ V.rummy = g => {
   if (g.phase === 'setup') {
     return `${gameHead('rummy')}<p class="lead">Rummikub para dos: cada uno empieza con 14 fichas y gana quien se quede sin ninguna.</p>
     <ul class="rules"><li><b>Grupo:</b> 3 o 4 fichas del mismo número y distinto color.</li><li><b>Escalera:</b> 3 o más números seguidos del mismo color.</li><li>Tu <b>primera bajada</b> tiene que sumar 30 puntos o más, solo con tus fichas.</li><li>Después puedes reacomodar la mesa como quieras, siempre que al terminar todo quede válido.</li><li>Si no puedes o no quieres bajar, robas una ficha.</li><li>El comodín reemplaza cualquier ficha.</li></ul>
+    <p class="label">¿Cuándo se roba?</p><div class="seg seg--2"><button class="seg-b ${g.drawFirst !== false ? 'is-on' : ''}" data-a="rkrule" data-v="1">Al empezar cada turno</button><button class="seg-b ${g.drawFirst === false ? 'is-on' : ''}" data-a="rkrule" data-v="0">Solo si no bajas</button></div>
+    <p class="hint">${g.drawFirst !== false ? 'Cada turno empieza robando una ficha; después bajas lo que quieras o simplemente pasas.' : 'Regla clásica: si no bajas nada en tu turno, robas una ficha.'}</p>
     <div class="nav"><button class="btn btn--gold big" data-a="rkdeal">Repartir fichas</button></div>`;
   }
   if (g.phase === 'end') {
@@ -1195,6 +1195,15 @@ V.rummy = g => {
     <p class="detail">${nm(l)} se quedó con ${g.racks[l].length} fichas (${rkPoints(g.racks[l])} puntos). +1 para ${nm(w)}.</p>
     <div class="rack rack--end">${g.racks[l].map(id => tileHtml(id)).join('')}</div>
     <button class="btn btn--gold" data-a="rkdeal">Otra partida</button></div></article>`;
+  }
+  const needDraw = g.turn === me && g.drawFirst !== false && !g.drawn;
+  if (needDraw) {
+    return `${gameHead('rummy', `<span class="chip">${g.pool.length} en la bolsa</span>`)}
+    <div class="rk-status"><b>Tu turno.</b> Empieza robando una ficha.</div>
+    <div class="rtable">${g.table.map(set => `<div class="rset">${set.map(id => tileHtml(id)).join('')}</div>`).join('') || '<p class="empty-table">La mesa está vacía.</p>'}</div>
+    <div class="rack-head"><span>Tus fichas · ${g.racks[me].length}</span></div>
+    <div class="rack">${rkSortRack(g.racks[me], ui.rkSort || 'color').map(id => tileHtml(id)).join('')}</div>
+    <div class="nav"><button class="btn btn--gold big" data-a="rkdrawfirst">${g.pool.length ? 'Robar ficha' : 'La bolsa está vacía: empezar'}</button></div>`;
   }
   const myTurn = g.turn === me;
   const w = myTurn ? rkWork(g) : null;
@@ -1207,18 +1216,22 @@ V.rummy = g => {
   const setsHtml = table.map((set, i) => {
     const an = rkAnalyze(set);
     const ordered = an.ok ? an.order : set;
-    return `<div class="rset ${an.ok ? '' : 'is-bad'} ${myTurn && sel.length ? 'is-target' : ''}" ${myTurn ? `data-a="rkset" data-i="${i}"` : ''}>${ordered.map(id => `<button class="rt-b" ${myTurn && (melded || played.includes(id)) ? `data-a="rktile" data-id="${id}"` : 'tabindex="-1"'}>${tileHtml(id, sel.includes(id) ? 'is-sel' : '')}</button>`).join('')}${myTurn && sel.length ? `<button class="rt-add" data-a="rkset" data-i="${i}" aria-label="Agregar aquí">+</button>` : ''}</div>`;
+    const canAdd = myTurn && sel.length && (melded || set.some(id => played.includes(id)));
+    return `<div class="rset ${an.ok ? '' : 'is-bad'} ${canAdd ? 'is-target' : ''}" ${canAdd ? `data-a="rkset" data-i="${i}"` : ''}>${ordered.map(id => `<button class="rt-b" ${myTurn && (melded || played.includes(id)) ? `data-a="rktile" data-id="${id}"` : 'tabindex="-1"'}>${tileHtml(id, sel.includes(id) ? 'is-sel' : '')}</button>`).join('')}${myTurn && sel.length && (melded || set.some(id => played.includes(id))) ? `<button class="rt-add" data-a="rkset" data-i="${i}" aria-label="Agregar a este grupo">+</button>` : ''}</div>`;
   }).join('');
-  const rackHtml = rkSortRack(rack, ui.rkSort || 'color').map(id => `<button class="rt-b" ${myTurn ? `data-a="rktile" data-id="${id}"` : 'tabindex="-1"'}>${tileHtml(id, sel.includes(id) ? 'is-sel' : '')}</button>`).join('');
+  const rackHtml = rkSortRack(rack, ui.rkSort || 'color').map(id => `<button class="rt-b" ${myTurn ? `data-a="rktile" data-id="${id}"` : 'tabindex="-1"'}>${tileHtml(id, (sel.includes(id) ? 'is-sel ' : '') + (id === ui.rkNew && myTurn ? 'is-new' : ''))}</button>`).join('');
   const ptsPlayed = played.length && !melded ? table.filter(set => set.some(id => played.includes(id))).reduce((s, set) => { const a = rkAnalyze(set); return s + (a.ok ? a.value : 0); }, 0) : 0;
   return `${gameHead('rummy', `<span class="chip">${g.pool.length} en la bolsa</span>`)}
-  <div class="rk-status">${myTurn ? `<b>Tu turno.</b> ${melded ? 'Arma, reacomoda o roba.' : `Primera bajada: necesitas 30 puntos${played.length ? ` · llevas ${ptsPlayed}` : ''}.`}` : `Turno de ${nm(o)}… ${peek ? 'está moviendo fichas en vivo' : 'pensando'} · le quedan ${peek ? peek.n : g.racks[o].length} fichas.`}</div>
-  <div class="rtable">${setsHtml || '<p class="empty-table">La mesa está vacía.</p>'}${myTurn && sel.length ? `<button class="rset rset--new" data-a="rknew">+ Nuevo grupo con ${sel.length === 1 ? 'la ficha' : `las ${sel.length} fichas`}</button>` : ''}</div>
+  <div class="rk-status">${myTurn ? `<b>Tu turno.</b> ${melded ? (g.drawFirst !== false ? 'Baja, reacomoda o pasa.' : 'Arma, reacomoda o roba.') : `Primera bajada: necesitas 30 puntos${played.length ? ` · llevas ${ptsPlayed}` : ''}.`}` : `Turno de ${nm(o)}… ${peek ? 'está moviendo fichas en vivo' : 'pensando'} · le quedan ${peek ? peek.n : g.racks[o].length} fichas.`}</div>
+  <div class="rtable">${setsHtml || '<p class="empty-table">La mesa está vacía.</p>'}</div>
   ${myTurn && w.err ? `<p class="err center">${esc(w.err)}</p>` : ''}
   <div class="rack-head"><span>Tus fichas · ${rack.length}</span><button class="link" data-a="rksort">Ordenar por ${(ui.rkSort || 'color') === 'color' ? 'número' : 'color'}</button></div>
   <div class="rack">${rackHtml}</div>
-  ${myTurn ? `<div class="rk-actions">${sel.length ? `<button class="btn btn--line" data-a="rkback">Devolver al atril</button>` : `<button class="btn btn--line" data-a="rkundo" ${played.length || JSON.stringify(w.table) !== JSON.stringify(g.table) ? '' : 'disabled'}>Deshacer</button>`}
-  ${played.length ? `<button class="btn btn--gold" data-a="rkend">Terminar turno</button>` : `<button class="btn btn--gold" data-a="rkdraw">${g.pool.length ? 'Robar y pasar' : 'Pasar'}</button>`}</div>` : ''}`;
+  ${myTurn ? (sel.length ? `<p class="rk-hint">${sel.length === 1 ? '1 ficha elegida' : `${sel.length} fichas elegidas`}. Tócalas de nuevo para soltarlas${melded || played.length ? ', o toca el <b>+</b> de un grupo de la mesa para sumarlas ahí' : ''}.</p>
+  <div class="rk-actions">${sel.some(id => !w.orig.includes(id) || !w.rack.includes(id)) ? `<button class="btn btn--line" data-a="rkback">Devolver al atril</button>` : `<button class="btn btn--line" data-a="rkclear">Cancelar</button>`}<button class="btn btn--gold" data-a="rknew">Bajar a la mesa</button></div>`
+    : `<p class="rk-hint">Toca las fichas que quieras bajar y después <b>Bajar a la mesa</b>. Se ordenan solas.</p>
+  <div class="rk-actions"><button class="btn btn--line" data-a="rkundo" ${played.length || JSON.stringify(w.table) !== JSON.stringify(g.table) ? '' : 'disabled'}>Deshacer todo</button>
+  ${played.length ? `<button class="btn btn--gold" data-a="rkend">Terminar turno</button>` : g.drawFirst !== false ? `<button class="btn btn--gold" data-a="rkpass">Pasar turno</button>` : `<button class="btn btn--gold" data-a="rkdraw">${g.pool.length ? 'Robar y pasar' : 'Pasar'}</button>`}</div>`) : ''}`;
 };
 
 // FINAL
@@ -1608,7 +1621,18 @@ const H = {
   rkdeal() {
     const all = shuffle([...Array(106).keys()]);
     const g = S.g; const first = g.winner ? other(g.winner) : (g.turn || mySlot() || 'p1');
-    dispatch({ patch: { phase: 'play', racks: { p1: all.slice(0, 14), p2: all.slice(14, 28) }, pool: all.slice(28), table: [], melded: { p1: false, p2: false }, turn: first, tk: rid(), winner: null, rid: rid() } });
+    dispatch({ patch: { phase: 'play', racks: { p1: all.slice(0, 14), p2: all.slice(14, 28) }, pool: all.slice(28), table: [], melded: { p1: false, p2: false }, turn: first, tk: rid(), drawn: false, winner: null, rid: rid() } });
+  },
+  rkrule(d) { dispatch({ patch: { drawFirst: d.v === '1' } }); },
+  rkdrawfirst() {
+    const g = S.g, me = mySlot(); if (g.turn !== me || g.drawn) return;
+    const pool = g.pool.slice(); const t = pool.pop();
+    ui.rk = null; ui.rkNew = t;
+    dispatch({ patch: { pool, racks: { ...g.racks, [me]: t === undefined ? g.racks[me] : [...g.racks[me], t] }, drawn: true } });
+  },
+  rkpass() {
+    const g = S.g, me = mySlot(); if (g.turn !== me) return;
+    ui.rk = null; dispatch({ patch: { turn: other(me), tk: rid(), drawn: false } });
   },
   rktile(d) {
     const w = ui.rk; if (!w) return; const id = +d.id;
@@ -1641,6 +1665,7 @@ const H = {
     w.rack = [...w.rack, ...ok.filter(id => !w.rack.includes(id))];
     w.sel = []; rkSync(); render();
   },
+  rkclear() { if (ui.rk) { ui.rk.sel = []; render(); } },
   rkundo() { ui.rk = null; render(); rkWork(S.g); rkSync(); },
   rksort() { ui.rkSort = (ui.rkSort || 'color') === 'color' ? 'num' : 'color'; render(); },
   rkdraw() {
@@ -1648,7 +1673,7 @@ const H = {
     const pool = g.pool.slice(); const t = pool.pop();
     const racks = { ...g.racks, [me]: t === undefined ? g.racks[me] : [...g.racks[me], t] };
     ui.rk = null;
-    dispatch({ patch: { pool, racks, turn: other(me), tk: rid() } });
+    dispatch({ patch: { pool, racks, turn: other(me), tk: rid(), drawn: false } });
   },
   rkend() {
     const g = S.g, me = mySlot(), w = ui.rk; if (!w || g.turn !== me) return;
@@ -1663,12 +1688,12 @@ const H = {
     const table = w.table.map(set => rkAnalyze(set).order);
     const racks = { ...g.racks, [me]: w.rack };
     ui.rk = null;
-    const a = { patch: { table, racks, melded: { ...g.melded, [me]: true }, turn: other(me), tk: rid() } };
+    const a = { patch: { table, racks, melded: { ...g.melded, [me]: true }, turn: other(me), tk: rid(), drawn: false } };
     if (!w.rack.length) { a.patch.phase = 'end'; a.patch.winner = me; a.score = { [me]: 1 }; a.loser = other(me); a.seed = g.rid + 'rk'; }
     dispatch(a);
   },
   // código
-  codelen(d) { dispatch({ patch: { len: +d.v } }); },
+  codelen(d) { dispatch({ patch: { len: +d.v, max: +d.v } }); },
   codemax(d) { dispatch({ patch: { max: +d.v } }); },
   codehints(d) { dispatch({ patch: { hints: d.v } }); },
   codestart() {
