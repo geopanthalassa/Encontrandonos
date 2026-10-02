@@ -20,6 +20,7 @@ const rnd = n => Math.floor(Math.random() * n);
 const hashIdx = (str, n) => { let h = 7; for (const c of String(str)) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h % n; };
 const clone = o => JSON.parse(JSON.stringify(o));
 const norm = s => String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+const hasWord = (text, w) => norm(w).split(/\s+/).filter(x => x.length > 2).every(x => norm(text).includes(x));
 const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = rnd(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
 let myId = LS.get('enc:id');
@@ -43,7 +44,7 @@ const fresh = () => ({
   seq: 0,
   players: { p1: null, p2: null },
   scores: { p1: 0, p2: 0 }, sync: 0,
-  settings: { drink: 'prost', alt: false, drawBonus: true },
+  settings: { drink: 'prost', alt: false, drawBonus: true, cheer: '¡Prost!' },
   screen: 'home', g: null, used: {}, penalty: null, flash: null
 });
 
@@ -56,7 +57,7 @@ let T = null;
 
 const ui = {
   drafts: {}, reveal: {}, deadlines: {}, ended: {}, flashSeen: {}, flashUntil: 0, flashText: '',
-  modal: null, toast: '', toastUntil: 0, diceRoll: {}, landingCode: ''
+  modal: null, toast: '', toastUntil: 0, diceRoll: {}, landingCode: '', tab: (() => { try { return localStorage.getItem('enc:tab'); } catch { return null; } })()
 };
 
 const mySlot = () => (S.players.p1?.id === myId ? 'p1' : S.players.p2?.id === myId ? 'p2' : null);
@@ -100,6 +101,12 @@ function resolveAnswers(st) {
     const pts = d === 0 ? 3 : d === 1 ? 2 : d === 2 ? 1 : 0;
     st.sync += pts;
     g.resolved = { d, pts };
+  } else if (g.k === 'diccionario') {
+    const reader = g.turn, guesser = other(reader);
+    const ok = A[guesser] === A[reader];
+    g.resolved = { ok };
+    if (ok) { st.scores[guesser] += 1; setFlash(st, `${nameOf(guesser)} no se dejó engañar. +1`, seed); }
+    else { st.scores[reader] += 1; setPenalty(st, guesser, seed); }
   } else if (g.k === 'dato' || g.k === 'mas') {
     const right = g.k === 'dato' ? (D.datos[g.idx].real ? 'real' : 'falso') : D.mas[g.idx].ok;
     const ok = {};
@@ -271,34 +278,95 @@ function pickFrom(key, pool) {
   return { idx, used: [key, idx, pool.length] };
 }
 
+const ICONS = {
+  cards: '<rect x="3" y="6" width="11" height="15" rx="2"/><path d="M8 3h11a2 2 0 0 1 2 2v13"/>',
+  mask: '<circle cx="12" cy="12" r="9"/><path d="M8.5 10h.01M15.5 10h.01"/><path d="M8 14.5c1.2 1.4 2.5 2 4 2s2.8-.6 4-2"/>',
+  mute: '<path d="M21 12a8 8 0 0 1-11.5 7.2L4 20l1-4.5A8 8 0 1 1 21 12z"/><path d="M9 9l6 6"/>',
+  pencil: '<path d="M4 20l4-1L19 8a2.1 2.1 0 0 0-3-3L5 16l-1 4z"/><path d="M14 7l3 3"/>',
+  people: '<circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M2.5 20c0-3 2.4-5 5.5-5s5.5 2 5.5 5"/><path d="M13.5 15.3c.8-.2 1.6-.3 2.5-.3 3.1 0 5.5 2 5.5 5"/>',
+  scale: '<path d="M12 4v16M8 20h8M5 7h14"/><path d="M5 7l-3 6a3 3 0 0 0 6 0z"/><path d="M19 7l-3 6a3 3 0 0 0 6 0z"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>',
+  wave: '<path d="M2 10c2-4 4-4 6 0s4 4 6 0 4-4 6 0"/><path d="M2 17c2-4 4-4 6 0s4 4 6 0 4-4 6 0"/>',
+  truths: '<path d="M3 7l2 2 4-4"/><path d="M3 16l2 2 4-4"/><path d="M15 6l6 6M21 6l-6 6"/>',
+  flask: '<path d="M9 3h6M10 3v6L4.5 18.5A1.7 1.7 0 0 0 6 21h12a1.7 1.7 0 0 0 1.5-2.5L14 9V3"/><path d="M7 15h10"/>',
+  bars: '<path d="M5 20V11M12 20V4M19 20v-6"/>',
+  candle: '<path d="M9 21V10h6v11"/><path d="M12 10V8"/><path d="M12 2.5c1.3 1.4 1.6 2.6 0 4.3-1.6-1.7-1.3-2.9 0-4.3z"/><path d="M6 21h12"/>',
+  moon: '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
+  flame: '<path d="M12 21c-3.9 0-7-2.8-7-6.5 0-3.3 2.5-5.4 4-8 .6 2 1.6 3 3 3 0-2 1-4.5 3-6.5.5 3 4 6 4 10.5 0 4.2-3.1 7.5-7 7.5z"/>',
+  eyeoff: '<path d="M3 3l18 18"/><path d="M10.6 6.1A10 10 0 0 1 12 6c5 0 9 6 9 6a17 17 0 0 1-3 3.4M6.6 6.6C4.2 8.1 3 12 3 12s4 6 9 6a9 9 0 0 0 4.4-1.1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>',
+  dice: '<rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r="1" fill="currentColor"/><circle cx="15" cy="15" r="1" fill="currentColor"/><circle cx="15" cy="9" r="1" fill="currentColor"/><circle cx="9" cy="15" r="1" fill="currentColor"/>',
+  target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1" fill="currentColor"/>',
+  book: '<path d="M3 5a2 2 0 0 1 2-2h5a2 2 0 0 1 2 2v16a2 2 0 0 0-2-2H3z"/><path d="M21 5a2 2 0 0 0-2-2h-5a2 2 0 0 0-2 2v16a2 2 0 0 1 2-2h7z"/>',
+  tiles: '<rect x="3" y="5" width="5" height="14" rx="1"/><rect x="9.5" y="5" width="5" height="14" rx="1"/><rect x="16" y="5" width="5" height="14" rx="1"/>',
+  heart: '<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>',
+  spark: '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5L18 18M6 18l2.5-2.5M15.5 8.5L18 6"/>',
+  eye: '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  cloud: '<path d="M7 18a4 4 0 0 1-.6-8A6 6 0 0 1 18 9a4.5 4.5 0 0 1-.5 9z"/>',
+  trophy: '<path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4"/><path d="M12 13v4M8 21h8M10 17h4"/>',
+  shuffle: '<path d="M4 7h3l10 10h3M4 17h3l3-3M14 10l3-3h3"/><path d="M18 5l2 2-2 2M18 15l2 2-2 2"/>',
+  glass: '<path d="M7 3h10l-1 8a4 4 0 0 1-8 0z"/><path d="M12 15v6M8 21h8"/>',
+  burst: '<path d="M12 2l2 6 6-2-3 5 5 3-6 1 1 6-5-4-5 4 1-6-6-1 5-3-3-5 6 2z"/>',
+  film: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/>',
+  calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  utensils: '<path d="M7 3v8a2 2 0 0 0 2 2v8M5 3v5M9 3v5M17 21V3c-2 1-3 4-3 8h3"/>',
+  music: '<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
+  mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.4 1.4M17.6 17.6L19 19M5 19l1.4-1.4M17.6 6.4L19 5"/>',
+  tv: '<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M8 3l4 3 4-3"/>',
+  mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>',
+  plane: '<path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/>',
+  gamepad: '<rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7 12.5h4M9 10.5v4"/><circle cx="16" cy="11.5" r="1" fill="currentColor"/><circle cx="18" cy="14" r="1" fill="currentColor"/>',
+  shirt: '<path d="M8 3L3 6l2 5 3-1v11h8V10l3 1 2-5-5-3a4 4 0 0 1-8 0z"/>',
+  sparkle: '<path d="M12 3l2 6 6 2-6 2-2 6-2-6-6-2 6-2z"/>',
+  more: '<circle cx="5" cy="12" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="19" cy="12" r="1.2" fill="currentColor"/>',
+  letter: '<path d="M5 20L11 4h2l6 16M8 14h8"/>',
+  link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+  cap: '<path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c3 2 9 2 12 0v-5"/>',
+  dict: '<path d="M5 4a2 2 0 0 1 2-2h12v17H7a2 2 0 0 0-2 2z"/><path d="M5 21V4M9 7h6M9 11h4"/>',
+  chat: '<path d="M4 5h11v8H8l-4 3z"/><path d="M15 9h5v8l-3-2h-6v-2"/>',
+  globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>',
+  share: '<path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/>'
+};
+const ic = (n, cls = '') => `<svg class="ic ${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n] || ''}</svg>`;
+const flames = n => Array.from({ length: n }, () => ic('flame')).join('');
+const CAT_ICON = { nosotros: 'heart', absurdas: 'spark', profundas: 'moon', coquetas: 'flame', retos: 'target', adiviname: 'eye', imagina: 'cloud', duelo: 'trophy' };
+const CUPON_ICON = ['film', 'calendar', 'utensils', 'music', 'mail', 'sun', 'tv', 'mic', 'plane', 'gamepad', 'shirt', 'sparkle'];
+
 // ───────────── juegos ─────────────
 const GAMES = {
-  cartas: { name: 'Cartas', icon: '🃏', blurb: 'Ocho barajas para hablar, reír y competir' },
-  mimica: { name: 'Mímica', icon: '🎭', blurb: 'Actúa contra el cronómetro. Solo tú ves la palabra' },
-  tabu: { name: 'Palabra prohibida', icon: '🤐', blurb: 'Descríbela sin decir las palabras vetadas' },
-  dibujo: { name: 'Dibuja y adivina', icon: '🎨', blurb: 'El otro ve tu dibujo en vivo' },
-  quien: { name: '¿Quién de los dos?', icon: '👉', blurb: 'Señalen en secreto y revelen a la vez' },
-  prefieres: { name: '¿Qué prefieres?', icon: '⚖️', blurb: 'Elige tú y adivina lo que elegirá el otro' },
-  miradas: { name: 'Duelo de miradas', icon: '👀', blurb: 'Pierde quien se ría primero' },
-  conoces: { name: '¿Cuánto me conoces?', icon: '🔍', blurb: 'Uno responde, el otro adivina' },
-  onda: { name: 'En la misma onda', icon: '📡', blurb: 'Del 1 al 10, ¿qué tan sincronizados están?' },
-  verdades: { name: 'Dos verdades y una mentira', icon: '🤞', blurb: 'Descubre cuál es la mentira' },
-  dato: { name: '¿Real o inventado?', icon: '🧪', blurb: 'Historia, lengua, ciencia… ¿verdad o mentira?' },
-  mas: { name: '¿Qué es más?', icon: '📏', blurb: 'Dos opciones, una sola correcta' },
-  profundas: { name: 'Preguntas profundas', icon: '🕯️', blurb: 'Modo tranquilo, sin puntos' },
-  sabanas: { name: 'Entre sábanas', icon: '🛏️', blurb: '¿Cuánto me conoces?, versión picante' },
-  sinfiltro: { name: 'Sin filtro', icon: '🔥', blurb: 'Tres niveles de picante' },
-  yonunca: { name: 'Yo nunca nunca', icon: '🙈', blurb: 'Confiesen a la vez' },
-  dado: { name: 'Dado coqueto', icon: '🎲', blurb: 'Una acción, un tema, a cámara' },
-  retos: { name: 'Retos', icon: '🎯', blurb: 'Hazlo o paga penitencia' },
-  historia: { name: 'Historia a dos voces', icon: '✒️', blurb: 'Un cuento, frase por frase' }
+  cartas: { name: 'Cartas', icon: 'cards', blurb: 'Ocho barajas para hablar, reír y competir' },
+  mimica: { name: 'Mímica', icon: 'mask', blurb: 'Actúa contra el cronómetro. Solo tú ves la palabra' },
+  tabu: { name: 'Palabra prohibida', icon: 'mute', blurb: 'Descríbela sin decir las palabras vetadas' },
+  dibujo: { name: 'Dibuja y adivina', icon: 'pencil', blurb: '2 minutos para adivinar todos los dibujos que puedan' },
+  quien: { name: '¿Quién de los dos?', icon: 'people', blurb: 'Señalen en secreto y revelen a la vez' },
+  prefieres: { name: '¿Qué prefieres?', icon: 'scale', blurb: 'Elige tú y adivina lo que elegirá el otro' },
+  miradas: { name: 'Duelo de miradas', icon: 'eye', blurb: 'Pierde quien se ría primero' },
+  conoces: { name: '¿Cuánto me conoces?', icon: 'search', blurb: 'Uno responde, el otro adivina' },
+  onda: { name: 'En la misma onda', icon: 'wave', blurb: 'Del 1 al 10, ¿qué tan sincronizados están?' },
+  verdades: { name: 'Dos verdades y una mentira', icon: 'truths', blurb: 'Descubre cuál es la mentira' },
+  dato: { name: '¿Real o inventado?', icon: 'flask', blurb: 'Historia, lengua, ciencia… ¿verdad o mentira?' },
+  mas: { name: '¿Qué es más?', icon: 'bars', blurb: 'Dos opciones, una sola correcta' },
+  profundas: { name: 'Preguntas profundas', icon: 'candle', blurb: 'Modo tranquilo, sin puntos' },
+  sabanas: { name: 'Entre sábanas', icon: 'moon', blurb: '¿Cuánto me conoces?, versión picante' },
+  sinfiltro: { name: 'Sin filtro', icon: 'flame', blurb: 'Tres niveles de picante' },
+  yonunca: { name: 'Yo nunca nunca', icon: 'eyeoff', blurb: 'Confiesen a la vez' },
+  dado: { name: 'Dado coqueto', icon: 'dice', blurb: 'Una acción, un tema, a cámara' },
+  retos: { name: 'Retos', icon: 'target', blurb: 'Hazlo o paga penitencia' },
+  historia: { name: 'Historia a dos voces', icon: 'book', blurb: 'Un cuento frase por frase, con palabras rarísimas' },
+  letra: { name: 'Cadena de letras', icon: 'letter', blurb: 'Una letra, una categoría y cada vez menos tiempo' },
+  encadenada: { name: 'Palabra encadenada', icon: 'link', blurb: 'Cada palabra empieza con la última sílaba' },
+  experto: { name: 'Experto en nada', icon: 'cap', blurb: 'Una charla seria sobre un tema absurdo' },
+  diccionario: { name: 'Diccionario mentiroso', icon: 'dict', blurb: 'Palabras raras: ¿definición real o inventada?' },
+  improv: { name: 'Sí, y además…', icon: 'chat', blurb: 'Improvisen una escena sin trabarse' },
+  traductor: { name: 'Traductor', icon: 'globe', blurb: 'Uno habla en idioma inventado, el otro traduce' },
+  entrevista: { name: 'Entrevista desde el futuro', icon: 'mic', blurb: 'Año 2045: todo el mundo te conoce por algo rarísimo' }
 };
 const GROUPS = [
-  { t: 'Para reír', keys: ['mimica', 'tabu', 'dibujo', 'quien', 'prefieres', 'miradas'] },
-  { t: 'Para ñoños', keys: ['dato', 'mas'] },
-  { t: 'Para conocernos', keys: ['conoces', 'onda', 'verdades', 'profundas'] },
-  { t: 'Para subir la temperatura', keys: ['sabanas', 'sinfiltro', 'yonunca', 'dado', 'retos'] },
-  { t: 'Para cerrar la noche', keys: ['historia'] }
+  { id: 'improvisar', t: 'Improvisar', keys: ['letra', 'encadenada', 'historia', 'experto', 'improv', 'traductor', 'entrevista'] },
+  { id: 'reir', t: 'Para reír', keys: ['mimica', 'tabu', 'dibujo', 'quien', 'prefieres'] },
+  { id: 'nonos', t: 'Ñoños', keys: ['dato', 'mas', 'diccionario'] },
+  { id: 'conocernos', t: 'Conocernos', keys: ['conoces', 'onda', 'verdades', 'profundas'] },
+  { id: 'picante', t: 'Picante', keys: ['sabanas', 'sinfiltro', 'yonunca', 'dado', 'retos'] }
 ];
 
 const CARD_CATS = Object.keys(D.cartas);
@@ -320,6 +388,12 @@ function startGame(k) {
     }
     case 'dado': return { screen: 'game', g: { ...base, a: null, t: null } };
     case 'dato': return { screen: 'game', g: { ...base, cat: null, mode: null } };
+    case 'letra': case 'encadenada': return { screen: 'game', g: { ...base, phase: 'setup', speed: 6 } };
+    case 'experto': { const p = pick('exp', D.experto.length); return { screen: 'game', used: p.used, g: { ...base, phase: 'ready', idx: p.idx } }; }
+    case 'diccionario': return { screen: 'game', g: { ...base, deck: null, answers: {} } };
+    case 'improv': return { screen: 'game', g: { ...base, phase: 'ready', q: rnd(D.improv.quienes.length), d: rnd(D.improv.donde.length), p: rnd(D.improv.problema.length) } };
+    case 'traductor': { const p = pick('trad', D.traductor.length); return { screen: 'game', used: p.used, g: { ...base, phase: 'ready', idx: p.idx } }; }
+    case 'entrevista': { const p = pick('fut', D.futuro.length); return { screen: 'game', used: p.used, g: { ...base, idx: p.idx, qs: shuffle([...Array(D.entrevistas.length).keys()]).slice(0, 4) } }; }
     default: return nextRound(k, turn);
   }
 }
@@ -363,20 +437,24 @@ function rings(big) {
   if (big) {
     return `<div class="rings rings--hero" aria-hidden="true"><span class="ring ring--a"></span><span class="ring ring--b"></span></div>`;
   }
+  const side = (slot, pl, cls) => `
+    <div class="sb-p ${cls} ${mySlot() === slot ? 'is-me' : ''}">
+      <span class="sb-name">${pl ? nm(slot) : 'Esperando…'}${pl && !on(slot) ? '<i class="off-dot" title="Desconectado"></i>' : ''}</span>
+      <span class="sb-pts">${S.scores[slot]}</span>
+    </div>`;
+  if (S.screen === 'game') {
+    return `
+  <div class="scorebar" role="group" aria-label="Marcador">
+    <span class="sbb sbb--a ${mySlot() === 'p1' ? 'is-me' : ''}"><span class="sbb-n">${p1 ? nm('p1') : 'Esperando…'}</span><b>${S.scores.p1}</b></span>
+    <span class="sbb-sync">${ic('heart')}<b>${S.sync}</b></span>
+    <span class="sbb sbb--b ${mySlot() === 'p2' ? 'is-me' : ''}"><b>${S.scores.p2}</b><span class="sbb-n">${p2 ? nm('p2') : 'Esperando…'}</span></span>
+  </div>`;
+  }
   return `
-  <div class="score" role="group" aria-label="Marcador">
-    <div class="ring-score ring-score--a ${mySlot() === 'p1' ? 'is-me' : ''}">
-      <span class="rs-name">${p1 ? nm('p1') : 'Esperando…'}${on('p1') ? '' : ' <i class="off-dot" title="Desconectado"></i>'}</span>
-      <span class="rs-pts">${S.scores.p1}</span>
-    </div>
-    <div class="ring-lens" title="Sintonía: puntos de los dos">
-      <span class="lens-pts">${S.sync}</span>
-      <span class="lens-lbl">sintonía</span>
-    </div>
-    <div class="ring-score ring-score--b ${mySlot() === 'p2' ? 'is-me' : ''}">
-      <span class="rs-name">${p2 ? nm('p2') : 'Esperando…'}${p2 && !on('p2') ? ' <i class="off-dot" title="Desconectado"></i>' : ''}</span>
-      <span class="rs-pts">${S.scores.p2}</span>
-    </div>
+  <div class="scoreboard" role="group" aria-label="Marcador">
+    ${side('p1', p1, 'sb-p--a')}
+    <div class="sb-sync" title="Sintonía: puntos que suman juntos">${ic('heart')}<b>${S.sync}</b><small>sintonía</small></div>
+    ${side('p2', p2, 'sb-p--b')}
   </div>`;
 }
 
@@ -433,27 +511,31 @@ function topbar() {
   else status = otherOn ? `<span class="st st--on">${nm(o)} está aquí</span>` : `<span class="st">${nm(o)} no está conectado</span>`;
   return `
   <header class="top">
-    <button class="chip" data-a="share" title="Compartir enlace de la sala">${esc(code)} <span aria-hidden="true">⤴</span></button>
+    <button class="chip" data-a="share" title="Compartir enlace de la sala">${esc(code)} ${ic('share')}</button>
     ${status}
-    <button class="icon-btn" data-a="menu" aria-label="Menú">⋯</button>
+    <button class="icon-btn" data-a="menu" aria-label="Menú">${ic('more')}</button>
   </header>`;
 }
 
 function viewHome() {
-  const item = k => `<button class="game" data-a="start" data-k="${k}"><span class="g-ic" aria-hidden="true">${GAMES[k].icon}</span><span class="g-tx"><b>${GAMES[k].name}</b><small>${GAMES[k].blurb}</small></span></button>`;
+  const tab = ui.tab || 'improvisar';
+  const gr = GROUPS.find(x => x.id === tab) || GROUPS[0];
+  const tile = k => `<button class="tile" data-a="start" data-k="${k}">${ic(GAMES[k].icon, 'ic--tile')}<b>${GAMES[k].name}</b><small>${GAMES[k].blurb}</small></button>`;
+  const soon = tab === 'reir' ? `<div class="tile tile--soon">${ic('tiles', 'ic--tile')}<b>Rummikub</b><small>Próximamente</small></div>` : '';
   return `
   <section class="home">
     <button class="feature" data-a="start" data-k="cartas">
       <span class="f-deck" aria-hidden="true"><i></i><i></i><i></i></span>
-      <span class="f-tx"><b>Cartas</b><small>Ocho barajas: nosotros, absurdas, profundas, coquetas, retos, adivíname, imagina que… y duelo.</small></span>
+      <span class="f-tx"><b>Cartas</b><small>Ocho barajas para hablar, reír y competir.</small></span>
     </button>
-    ${GROUPS.map(gr => `<div class="group"><h2>${gr.t}</h2><div class="list">${gr.keys.map(item).join('')}${gr.t === 'Para cerrar la noche' ? `<div class="game game--soon"><span class="g-ic" aria-hidden="true">🀄</span><span class="g-tx"><b>Rummikub</b><small>Próximamente</small></span></div>` : ''}</div></div>`).join('')}
+    <nav class="tabs" aria-label="Tipos de juego">${GROUPS.map(g => `<button class="tab ${g.id === tab ? 'is-on' : ''}" data-a="tab" data-v="${g.id}">${g.t}</button>`).join('')}</nav>
+    <div class="tiles">${gr.keys.map(tile).join('')}${soon}</div>
     <button class="btn btn--line wide" data-a="finish">Terminar la noche</button>
   </section>`;
 }
 
 const back = (label = 'Juegos') => `<button class="back" data-a="home">← ${label}</button>`;
-const gameHead = (k, extra = '') => `<div class="ghead">${back()}<h2><span aria-hidden="true">${GAMES[k].icon}</span> ${GAMES[k].name}</h2>${extra}</div>`;
+const gameHead = (k, extra = '') => `<div class="ghead">${back()}<h2>${ic(GAMES[k].icon, 'ic--head')} ${GAMES[k].name}</h2>${extra}</div>`;
 
 // Revelación con cuenta regresiva
 function revealState(g) {
@@ -485,8 +567,8 @@ const V = {};
 // CARTAS
 V.cartas = g => {
   if (!g.cat) {
-    const cats = CARD_CATS.map(c => `<button class="cat" data-a="cat" data-c="${c}"><span aria-hidden="true">${D.cartas[c].icon}</span><b>${D.cartas[c].name}</b><small>${D.cartas[c].blurb}</small></button>`).join('');
-    return `${gameHead('cartas')}<p class="lead">Elige una baraja.</p><div class="cats">${cats}<button class="cat cat--mix" data-a="cat" data-c="mezcla"><span aria-hidden="true">✦</span><b>Mezcla</b><small>Una carta de cualquier baraja</small></button></div>`;
+    const cats = CARD_CATS.map(c => `<button class="cat" data-a="cat" data-c="${c}">${ic(CAT_ICON[c], 'ic--cat')}<b>${D.cartas[c].name}</b><small>${D.cartas[c].blurb}</small></button>`).join('');
+    return `${gameHead('cartas')}<p class="lead">Elige una baraja.</p><div class="cats">${cats}<button class="cat cat--mix" data-a="cat" data-c="mezcla">${ic('shuffle', 'ic--cat')}<b>Mezcla</b><small>Una carta de cualquier baraja</small></button></div>`;
   }
   if (g.idx === undefined) return `${gameHead('cartas')}<div class="center"><button class="btn btn--gold big" data-a="draw">Robar carta</button></div>`;
   const deck = D.cartas[g.cc], card = deck.cards[g.idx];
@@ -518,7 +600,7 @@ const cardNav = () => `<div class="nav"><button class="btn btn--gold" data-a="dr
 function cardShell(deck, text, body, nav) {
   return `${gameHead('cartas')}
   <article class="card" data-rid="${S.g.rid}">
-    <span class="card-cat">${deck.icon} ${esc(deck.name)}</span>
+    <span class="card-cat">${esc(deck.name)}</span>
     <p class="card-q">${esc(text)}</p>
     <div class="card-body">${body}</div>
   </article>${nav}`;
@@ -535,7 +617,7 @@ V.quien = g => {
   } else if (rs.count) body = countdownHtml(rs);
   else {
     const say = s => (g.answers[s] === s ? `${nm(s)} se señaló a sí mismo` : `${nm(s)} señaló a ${nm(g.answers[s])}`);
-    body = `<p class="verdict big">${g.resolved.same ? '¡Coincidieron! ❤️' : 'Tenemos opiniones diferentes 😂'}</p><p class="detail">${say('p1')}.<br>${say('p2')}.</p>`;
+    body = `<p class="verdict big">${g.resolved.same ? '¡Coincidieron!' : 'Tenemos opiniones diferentes'}</p><p class="detail">${say('p1')}.<br>${say('p2')}.</p>`;
   }
   return `${gameHead('quien')}<article class="card"><p class="card-q">${esc(D.quien[g.idx])}</p><div class="card-body">${body}</div></article>
   <div class="nav"><button class="btn btn--gold" data-a="next">Otra pregunta</button></div>`;
@@ -549,9 +631,9 @@ V.profundas = g => `${gameHead('profundas')}
 
 // SIN FILTRO
 V.sinfiltro = g => {
-  if (!g.lvl) return `${gameHead('sinfiltro')}<p class="lead">Elijan el nivel. Se puede cambiar cuando quieran.</p><div class="levels">${[1, 2, 3].map(l => `<button class="level" data-a="lvl" data-l="${l}"><span>${D.sinfiltro[l].chili}</span><b>${D.sinfiltro[l].name}</b></button>`).join('')}</div>`;
+  if (!g.lvl) return `${gameHead('sinfiltro')}<p class="lead">Elijan el nivel. Se puede cambiar cuando quieran.</p><div class="levels">${[1, 2, 3].map(l => `<button class="level" data-a="lvl" data-l="${l}"><span class="flames">${flames(l)}</span><b>${D.sinfiltro[l].name}</b></button>`).join('')}</div>`;
   const lv = D.sinfiltro[g.lvl];
-  return `${gameHead('sinfiltro', `<button class="chip" data-a="lvlreset">${lv.chili} ${lv.name}</button>`)}
+  return `${gameHead('sinfiltro', `<button class="chip" data-a="lvlreset">${flames(g.lvl)} ${lv.name}</button>`)}
   <article class="card card--hot"><p class="card-q">${esc(lv.cards[g.idx])}</p><div class="card-body"><p class="who">Responde ${nm(g.turn)}</p>${g.done ? `<p class="verdict">${esc(g.done)}</p>` : ''}</div></article>
   <div class="nav"><button class="btn btn--gold" data-a="sfnext">Otra pregunta</button><button class="btn btn--line" data-a="lose" data-s="${g.turn}" ${g.done ? 'disabled' : ''}>Me la salto</button></div>`;
 };
@@ -562,23 +644,29 @@ V.retos = g => `${gameHead('retos')}
   <div class="card-body">${g.done ? `<p class="verdict">${esc(g.done)}</p>` : `<div class="duo"><button class="btn btn--gold" data-a="win" data-s="${g.turn}" data-msg="${nm(g.turn)} cumplió. +1">Lo hizo · +1</button><button class="btn btn--line" data-a="lose" data-s="${g.turn}">Se negó</button></div>`}</div></article>
   <div class="nav"><button class="btn btn--gold" data-a="next">Otro reto</button></div>`;
 
-// DIBUJA Y ADIVINA
+// DIBUJA Y ADIVINA: rondas de 2 minutos, todos los dibujos que puedan
+const DRAW_SECS = 120;
 V.dibujo = g => {
   const me = mySlot();
   const drawer = g.drawer, guesser = other(drawer);
   if (g.phase === 'cat') {
-    return `${gameHead('dibujo')}<p class="lead">Dibuja <b>${nm(drawer)}</b>. ${me === drawer ? 'Elige una categoría: la palabra solo aparecerá en tu pantalla.' : `${nm(drawer)} está eligiendo la categoría.`}</p>
+    return `${gameHead('dibujo')}<p class="lead">Dibuja <b>${nm(drawer)}</b>. Tienen 2 minutos: cada dibujo que ${nm(guesser)} adivine suma un punto. ${me === drawer ? 'Elige una categoría: las palabras solo aparecen en tu pantalla.' : `${nm(drawer)} está eligiendo la categoría.`}</p>
     ${me === drawer ? `<div class="cats cats--tight">${Object.keys(D.dibujo).map(c => `<button class="cat" data-a="dcat" data-c="${c}"><b>${D.dibujo[c].name}</b></button>`).join('')}</div>` : ''}`;
   }
-  const word = D.dibujo[g.cat].words[g.idx];
-  const left = timeLeft(g.rid, 60);
+  if (g.phase === 'end') {
+    return `${gameHead('dibujo')}<article class="card"><p class="card-q">${nm(guesser)} adivinó ${g.got} ${g.got === 1 ? 'dibujo' : 'dibujos'}</p>
+    <div class="card-body"><p class="detail">${g.got ? `+${g.got} para ${nm(guesser)}${S.settings.drawBonus ? ` y +${g.got} para ${nm(drawer)}` : ''}.` : 'Ningún dibujo adivinado esta vez.'}</p>
+    <button class="btn btn--gold" data-a="dnext">Siguiente: dibuja ${nm(guesser)}</button></div></article>`;
+  }
+  const word = D.dibujo[g.cat].words[g.list[g.pos]];
+  const left = timeLeft(g.round, DRAW_SECS);
   const top = me === drawer
-    ? `<div class="secret"><small>Tu palabra secreta</small><b>${esc(word)}</b></div>`
-    : `<div class="secret secret--hidden"><small>${nm(drawer)} está dibujando</small><b>${esc(D.dibujo[g.cat].name)}</b></div>`;
-  const tools = me === drawer && g.phase === 'play' ? `<div class="tools">${['#F3E7D3', '#D6B06A', '#C24D5C', '#7FA7C9'].map(c => `<button class="sw" style="--c:${c}" data-a="color" data-c="${c}" aria-label="Color"></button>`).join('')}<button class="chip" data-a="clear">Borrar</button></div>` : '';
-  let foot;
-  if (g.phase === 'end') foot = `<p class="verdict">${esc(g.res)}</p><p class="detail">La palabra era <b>${esc(word)}</b>.</p><div class="nav"><button class="btn btn--gold" data-a="dnext">Siguiente: dibuja ${nm(guesser)}</button></div>`;
-  else foot = `<div class="duo"><button class="btn btn--gold" data-a="dok">Adivinó</button><button class="btn btn--line" data-a="dfail">No adivinó</button></div>`;
+    ? `<div class="secret"><small>Dibujo ${g.pos + 1} · llevan ${g.got}</small><b>${esc(word)}</b></div>`
+    : `<div class="secret secret--hidden"><small>${nm(drawer)} dibuja · llevas ${g.got}</small><b>${esc(D.dibujo[g.cat].name)}</b></div>`;
+  const tools = me === drawer ? `<div class="tools">${['#F3E7D3', '#D6B06A', '#C24D5C', '#7FA7C9'].map(c => `<button class="sw" style="--c:${c}" data-a="color" data-c="${c}" aria-label="Color"></button>`).join('')}<button class="chip" data-a="clear">Borrar</button></div>` : '';
+  const foot = me === drawer
+    ? `<div class="duo"><button class="btn btn--gold" data-a="dok">¡Adivinó!</button><button class="btn btn--line" data-a="dpass">Pasar</button></div>`
+    : `<div class="nav"><button class="btn btn--gold" data-a="dok">¡Adiviné!</button></div>`;
   return `${gameHead('dibujo', timerHtml(left))}${top}<div class="canvas-wrap" id="canvas-slot"></div>${tools}${foot}`;
 };
 
@@ -777,7 +865,7 @@ V.miradas = g => {
 
 // YO NUNCA NUNCA
 V.yonunca = g => {
-  if (!g.lvl) return `${gameHead('yonunca')}<p class="lead">Elijan el nivel. Cada uno confiesa en secreto y se revela a la vez.</p><div class="levels">${[1, 2, 3].map(l => `<button class="level" data-a="ynlvl" data-l="${l}"><span>${D.yonunca[l].chili}</span><b>${D.yonunca[l].name}</b></button>`).join('')}</div>`;
+  if (!g.lvl) return `${gameHead('yonunca')}<p class="lead">Elijan el nivel. Cada uno confiesa en secreto y se revela a la vez.</p><div class="levels">${[1, 2, 3].map(l => `<button class="level" data-a="ynlvl" data-l="${l}"><span class="flames">${flames(l)}</span><b>${D.yonunca[l].name}</b></button>`).join('')}</div>`;
   const lv = D.yonunca[g.lvl];
   const me = mySlot();
   const rs = revealState(g);
@@ -791,7 +879,7 @@ V.yonunca = g => {
     body = `<div class="reveal"><div><small>${nm('p1')}</small><b>${g.answers.p1 === 'si' ? 'Yo sí' : 'Yo nunca'}</b></div><div><small>${nm('p2')}</small><b>${g.answers.p2 === 'si' ? 'Yo sí' : 'Yo nunca'}</b></div></div>
     <p class="verdict">${yes.length === 2 ? 'Los dos. Cuéntense la historia.' : yes.length ? `${nm(yes[0])}, toca contar la historia.` : 'Ninguno de los dos. Qué inocentes.'}</p>`;
   }
-  return `${gameHead('yonunca', `<button class="chip" data-a="ynreset">${lv.chili} ${lv.name}</button>`)}<article class="card card--hot"><p class="card-q">${esc(lv.cards[g.idx])}</p><div class="card-body">${body}</div></article>
+  return `${gameHead('yonunca', `<button class="chip" data-a="ynreset">${flames(g.lvl)} ${lv.name}</button>`)}<article class="card card--hot"><p class="card-q">${esc(lv.cards[g.idx])}</p><div class="card-body">${body}</div></article>
   <div class="nav"><button class="btn btn--gold" data-a="ynnext">Otra</button></div>`;
 };
 
@@ -819,7 +907,7 @@ V.historia = g => {
     foot = `<div class="nav"><button class="btn btn--gold" data-a="histnew">Nueva historia</button></div>`;
   } else if (me === g.turn) {
     const draft = ui.drafts['hist-' + g.rid] || '';
-    const has = !draft || norm(draft).includes(norm(word));
+    const has = !draft || hasWord(draft, word);
     foot = `<div class="must">Tu frase debe incluir <b>${esc(word)}</b></div>
       <textarea id="in-hist" data-draft="hist-${g.rid}" rows="3" maxlength="220" placeholder="Continúa la historia…">${esc(draft)}</textarea>
       ${has ? '' : `<p class="err">Falta la palabra «${esc(word)}».</p>`}
@@ -829,6 +917,128 @@ V.historia = g => {
   }
   return `${gameHead('historia')}<article class="card story ${g.done ? 'story--done' : ''}"><p class="story-tx"><span class="ln ln--open">${esc(D.historia.inicios[g.open])}</span> ${lines}</p>
   ${g.done ? `<p class="detail">Una historia de ${nm('p1')} y ${nm('p2')}.</p>` : ''}</article>${foot}`;
+};
+
+
+// ───────────── juegos de improvisación ─────────────
+function clock(left, dur) {
+  const pct = Math.max(0, Math.min(100, (left / dur) * 100));
+  return `<div class="clock ${left <= Math.min(10, dur / 3) ? 'is-low' : ''}" style="--p:${pct}"><span>${left}</span><small>segundos</small></div>`;
+}
+const turnSecs = g => Math.max(2, g.speed - Math.floor(g.count / 4) * 0.5);
+
+function viewChain(g) {
+  const me = mySlot(), isLetra = g.k === 'letra';
+  if (g.phase === 'setup') {
+    const cat = ui.drafts.letraCat ?? 0;
+    const sp = (v, l) => `<button class="seg-b ${g.speed === v ? 'is-on' : ''}" data-a="chainspeed" data-v="${v}">${l}</button>`;
+    return `${gameHead(g.k)}<p class="lead">${isLetra ? 'Sale una letra y una categoría. Por turnos, digan algo que empiece con esa letra. Pierde quien se quede en blanco, se pase del tiempo o repita.' : 'Uno dice una palabra; el otro tiene que decir una que empiece con la última sílaba (mari<b>posa</b> → <b>sa</b>po → <b>po</b>llo…). Pierde quien se trabe, se pase del tiempo o repita.'}</p>
+    ${isLetra ? `<p class="label">Categoría</p><div class="picks">${D.letraCats.map((c, i) => `<button class="pick ${cat === i ? 'is-on' : ''}" data-a="letracat" data-v="${i}">${esc(c)}</button>`).join('')}<button class="pick ${cat === -1 ? 'is-on' : ''}" data-a="letracat" data-v="-1">Sorpresa</button></div>` : ''}
+    <p class="label">Tiempo por turno</p><div class="seg">${sp(8, 'Tranqui · 8 s')}${sp(6, 'Normal · 6 s')}${sp(4, 'Rápido · 4 s')}</div>
+    <p class="hint">El tiempo se acorta medio segundo cada cuatro palabras.</p>
+    <div class="nav"><button class="btn btn--gold big" data-a="chainstart">Empezar</button></div>`;
+  }
+  const head = isLetra
+    ? `<div class="letter-tile">${esc(g.letter)}</div><p class="chain-cat">${esc(D.letraCats[g.cat])}</p>`
+    : `<p class="chain-cat">Primera palabra</p><div class="letter-tile letter-tile--word">${esc(D.encadenada[g.word])}</div>`;
+  if (g.phase === 'end') {
+    return `${gameHead(g.k)}${head}<article class="card card--calm"><p class="card-q">${nm(g.loser)} perdió</p>
+    <div class="card-body"><p class="detail">${g.why === 'tiempo' ? 'Se le acabó el tiempo.' : g.why === 'repite' ? 'Repitió una palabra.' : 'Se rindió.'} Llegaron a ${g.count} ${g.count === 1 ? 'palabra' : 'palabras'}. +1 para ${nm(other(g.loser))}.</p>
+    <button class="btn btn--gold" data-a="chainagain">Otra ronda</button><button class="btn btn--line" data-a="chainsetup">Cambiar ${isLetra ? 'categoría' : 'velocidad'}</button></div></article>`;
+  }
+  const dur = turnSecs(g);
+  const left = timeLeft(g.tid, dur);
+  const mine = g.turn === me;
+  return `${gameHead(g.k)}${head}<p class="who center">${mine ? '¡Te toca!' : `Le toca a ${nm(g.turn)}`} · ${g.count} ${g.count === 1 ? 'palabra' : 'palabras'}</p>${clock(left, Math.ceil(dur))}
+  ${mine ? `<div class="nav"><button class="btn btn--gold big" data-a="chainpass">¡Dije una! Te toca</button><button class="btn btn--line" data-a="chaingive">Me rindo</button></div>`
+    : `<div class="nav"><button class="btn btn--wine big" data-a="chainrep">¡Repitió!</button></div>`}`;
+}
+V.letra = viewChain;
+V.encadenada = viewChain;
+
+V.experto = g => {
+  const me = mySlot(), ex = g.turn, q = other(ex);
+  const topic = D.experto[g.idx];
+  let body = '';
+  if (g.phase === 'ready') body = `<p class="detail">${nm(ex)} es la máxima autoridad mundial en este tema. Tiene 60 segundos para dar una charla seria. Después ${nm(q)} hace sus preguntas.</p>${me === ex ? '<button class="btn btn--gold" data-a="expgo">Empezar la charla</button>' : `<p class="wait">Esperando a que ${nm(ex)} suba al escenario…</p>`}`;
+  else if (g.phase === 'talk') {
+    const left = timeLeft(g.rid, 60);
+    body = `${clock(left, 60)}${me === ex ? '<button class="btn btn--line" data-a="expask">Terminé, que pregunten</button>' : `<p class="detail">Escucha con cara de interés. En cuanto termine, te toca preguntar.</p><button class="btn btn--line" data-a="expask">Pasar a las preguntas</button>`}`;
+  } else if (g.phase === 'ask') {
+    body = me === q
+      ? `<p class="who">Tus preguntas para ${nm(ex)}:</p><ul class="qlist">${g.qs.map(i => `<li>${esc(D.preguntonas[i])}</li>`).join('')}</ul><p class="who">¿Te convenció?</p><div class="duo"><button class="btn btn--gold" data-a="win" data-s="${ex}" data-msg="${nm(ex)} es una eminencia. +1">Me convenció · +1</button><button class="btn btn--line" data-a="lose" data-s="${ex}">Fraude total</button></div>`
+      : `<p class="detail">${nm(q)} te va a hacer preguntas incómodas. Responde con total seguridad.</p>`;
+    if (g.done) body = `<p class="verdict">${esc(g.done)}</p>`;
+  }
+  return `${gameHead('experto')}<article class="card"><span class="card-cat">Conferencia de ${nm(ex)}</span><p class="card-q">${esc(topic)}</p><div class="card-body">${body}</div></article>
+  <div class="nav"><button class="btn btn--gold" data-a="expnext">Siguiente conferencia: ${nm(q)}</button></div>`;
+};
+
+V.diccionario = g => {
+  if (!g.deck) {
+    const opt = (v, t, dsc) => `<button class="level" data-a="diccdeck" data-v="${v}"><span class="lvl-ic">${ic(v === 'alemania' ? 'globe' : v === 'venezuela' ? 'sun' : 'dict')}</span><span><b>${t}</b><small class="lvl-sub">${dsc}</small></span></button>`;
+    return `${gameHead('diccionario')}<p class="lead">Quien lee ve la definición real y decide si la lee o inventa otra. Ideal cuando uno sabe y el otro no.</p><div class="levels">${opt('venezuela', 'Venezolanismos', 'Ladilla, ñapa, zaperoco, ratón…')}${opt('alemania', 'Palabras alemanas', 'Fernweh, Kopfkino, Treppenwitz…')}${opt('raras', 'Raras del español', 'Petricor, trampantojo, zascandil…')}${opt('todas', 'Todas mezcladas', 'Cualquiera de las tres')}</div>`;
+  }
+  const me = mySlot(), reader = g.turn, guesser = other(reader);
+  const it = D.diccionario[g.idx];
+  const rs = revealState(g);
+  let body;
+  if (rs === 'wait') {
+    if (me === reader) {
+      const mine = g.answers?.[me];
+      body = mine === undefined
+        ? `<p class="who">Definición real, solo para ti:</p><p class="def">${esc(it.d)}</p><p class="detail">¿Vas a leer la real o vas a inventar una?</p><div class="opts"><button class="opt" data-a="answer" data-v="real">Leeré la real</button><button class="opt" data-a="answer" data-v="falsa">Inventaré una</button></div>`
+        : `<p class="who">${mine === 'real' ? 'Lee la definición real' : 'Inventa una definición'} en voz alta, con cara de póker.</p>${mine === 'real' ? `<p class="def">${esc(it.d)}</p>` : ''}<p class="wait">Esperando a que ${nm(guesser)} decida…</p>`;
+    } else {
+      body = g.answers?.[reader] === undefined
+        ? `<p class="wait">${nm(reader)} está preparando su definición…</p>`
+        : g.answers?.[me] === undefined
+          ? `<p class="who">Escucha a ${nm(reader)}. ¿La definición es…?</p><div class="opts"><button class="opt" data-a="answer" data-v="real">Real</button><button class="opt" data-a="answer" data-v="falsa">Inventada</button></div>`
+          : `<p class="wait">Listo…</p>`;
+    }
+  } else if (rs.count) body = countdownHtml(rs);
+  else {
+    body = `<p class="verdict big">${g.answers[reader] === 'real' ? 'Era la real' : 'Era inventada'}</p><p class="detail">${g.resolved.ok ? `${nm(guesser)} no se dejó engañar. +1` : `${nm(reader)} engañó a ${nm(guesser)}. +1 para ${nm(reader)}`}</p><p class="def">${esc(it.w)}: ${esc(it.d)}</p>`;
+  }
+  const deckName = { venezuela: 'Venezolanismos', alemania: 'Alemán', raras: 'Raras del español', todas: 'Mezcla' }[g.deck];
+  return `${gameHead('diccionario', `<button class="chip" data-a="diccreset">${deckName}</button>`)}<article class="card"><span class="card-cat">Lee ${nm(reader)}</span><p class="card-q huge">${esc(it.w)}</p><div class="card-body">${body}</div></article>
+  <div class="nav"><button class="btn btn--gold" data-a="diccnext">Otra palabra</button></div>`;
+};
+
+V.improv = g => {
+  const I = D.improv;
+  const scene = `<p class="card-q">${esc(I.quienes[g.q])} en ${esc(I.donde[g.d])}, y ${esc(I.problema[g.p])}.</p>`;
+  let body = '';
+  if (g.phase === 'ready') body = `<p class="detail">Elijan quién es quién y armen la escena por turnos. Cada frase empieza con «Sí, y además…». Pierde quien se trabe, niegue lo que dijo el otro o se ría demasiado.</p><button class="btn btn--gold" data-a="impgo">Empezar · 3 minutos</button>`;
+  else if (g.done) body = `<p class="verdict">${esc(g.done)}</p>`;
+  else {
+    const left = timeLeft(g.rid, 180);
+    body = `${clock(left, 180)}<div class="duo"><button class="btn btn--line" data-a="lose" data-s="p1">Se trabó ${nm('p1')}</button><button class="btn btn--line" data-a="lose" data-s="p2">Se trabó ${nm('p2')}</button></div><button class="btn btn--gold" data-a="impwin">¡Escenón! +1 a la sintonía</button>`;
+  }
+  return `${gameHead('improv')}<article class="card"><span class="card-cat">La escena</span>${scene}<div class="card-body">${body}</div></article>
+  <div class="nav"><button class="btn btn--gold" data-a="impnext">Otra escena</button></div>`;
+};
+
+V.traductor = g => {
+  const me = mySlot(), sp = g.turn, tr = other(sp);
+  let body = '';
+  if (g.phase === 'ready') body = `<p class="detail">${nm(sp)} habla 20 segundos en un idioma inventado, con gestos y emoción. Después ${nm(tr)} traduce con total seriedad.</p>${me === sp ? '<button class="btn btn--gold" data-a="trgo">Empezar a hablar</button>' : `<p class="wait">Esperando a ${nm(sp)}…</p>`}`;
+  else if (g.done) body = `<p class="verdict">${esc(g.done)}</p>`;
+  else {
+    const left = timeLeft(g.rid, 20);
+    body = left > 0 ? `${clock(left, 20)}<p class="who center">Habla ${nm(sp)}</p>` : `<p class="who">¡Ahora traduce ${nm(tr)}!</p><div class="duo"><button class="btn btn--gold" data-a="win" data-s="${tr}" data-msg="Traducción magistral. +1 para ${nm(tr)}">Traducción magistral</button><button class="btn btn--line" data-a="trmeh">Nadie entendió nada</button></div>`;
+  }
+  return `${gameHead('traductor')}<article class="card"><span class="card-cat">Situación</span><p class="card-q">${esc(D.traductor[g.idx])}</p><div class="card-body">${body}</div></article>
+  <div class="nav"><button class="btn btn--gold" data-a="trnext">Siguiente: habla ${nm(tr)}</button></div>`;
+};
+
+V.entrevista = g => {
+  const me = mySlot(), star = g.turn, host = other(star);
+  const body = me === host
+    ? `<p class="who">Tú entrevistas. Algunas preguntas:</p><ul class="qlist">${g.qs.map(i => `<li>${esc(D.entrevistas[i])}</li>`).join('')}</ul><p class="detail">Inventa más. Cuanto más incómodas, mejor.</p>`
+    : `<p class="detail">Eres una celebridad. Responde todo con detalles inventados y mucha seguridad.</p>`;
+  return `${gameHead('entrevista')}<article class="card"><span class="card-cat">Año 2045</span><p class="card-q">Todo el mundo conoce a ${nm(star)} por ${esc(D.futuro[g.idx])}.</p><div class="card-body">${body}<button class="btn btn--line" data-a="impwin">Aplausos · +1 a la sintonía</button></div></article>
+  <div class="nav"><button class="btn btn--gold" data-a="entnext">Siguiente entrevista: ${nm(host)}</button></div>`;
 };
 
 // FINAL
@@ -843,10 +1053,10 @@ function viewFinal() {
   let couponArea;
   if (g.coupon !== undefined && g.coupon !== null) {
     const c = D.cupones[g.coupon];
-    couponArea = `<div class="coupon"><span class="cp-ic" aria-hidden="true">${c.i}</span><b>${esc(c.t)}</b><p>${esc(c.d)}</p><small>${tie ? 'Cupón compartido' : `Para ${nm(winner)}, cortesía de ${nm(other(winner))}`}</small></div>`;
+    couponArea = `<div class="coupon"><span class="cp-ic">${ic(CUPON_ICON[g.coupon] || 'sparkle')}</span><b>${esc(c.t)}</b><p>${esc(c.d)}</p><small>${tie ? 'Cupón compartido' : `Para ${nm(winner)}, cortesía de ${nm(other(winner))}`}</small></div>`;
   } else if (canChoose) {
     couponArea = `<p class="lead">${tie ? 'Empate. Elijan un cupón juntos para la próxima vez que se vean.' : 'Elige tu cupón para la próxima vez que se vean.'}</p>
-    <div class="coupons">${D.cupones.map((c, i) => `<button class="cp" data-a="coupon" data-i="${i}"><span aria-hidden="true">${c.i}</span><b>${esc(c.t)}</b><small>${esc(c.d)}</small></button>`).join('')}</div>`;
+    <div class="coupons">${D.cupones.map((c, i) => `<button class="cp" data-a="coupon" data-i="${i}">${ic(CUPON_ICON[i] || 'sparkle', 'ic--cat')}<b>${esc(c.t)}</b><small>${esc(c.d)}</small></button>`).join('')}</div>`;
   } else {
     couponArea = `<p class="wait">${nm(chooser)} está eligiendo su cupón…</p>`;
   }
@@ -884,6 +1094,7 @@ function viewOverlay() {
     return sheet(`<h3>Bebida y penitencias</h3>
       <p class="label">Modo bebida</p>
       <div class="seg">${seg('off', 'Off')}${seg('prost', '¡Prost!')}${seg('tragos', 'Dos tragos')}</div>
+      ${d !== 'off' ? `<p class="label">Brindan diciendo</p><div class="picks">${['¡Salud!', '¡Prost!', '¡Cheers!', '¡Saúde!', '¡Santé!'].map(w => `<button class="pick ${(S.settings.cheer || '¡Prost!') === w ? 'is-on' : ''}" data-a="cheer" data-v="${w}">${w}</button>`).join('')}</div>` : ''}
       <p class="note">${d === 'off' ? 'Sin bebida. Activa la penitencia alternativa para que perder tenga consecuencias.' : d === 'prost' ? 'Un trago con brindis a cámara y algo que decirle al otro.' : 'Dos tragos pequeños. Jueguen con moderación y alternen con agua.'}</p>
       <label class="toggle"><input type="checkbox" data-a="alt" ${S.settings.alt ? 'checked' : ''}><span>Penitencia alternativa</span><small>Para quien prefiera no beber: imitaciones, cumplidos, bailes…</small></label>
       <label class="toggle"><input type="checkbox" data-a="drawbonus" ${S.settings.drawBonus ? 'checked' : ''}><span>Punto para quien dibuja o actúa</span><small>En Dibuja y adivina y en Mímica, si el otro acierta, los dos suman.</small></label>
@@ -911,11 +1122,11 @@ function viewOverlay() {
     const pen = esc(D.penitencias[p.pen]);
     let main = '';
     const line = esc(D.prost[hashIdx(p.id, D.prost.length)]).replace(/\{o\}/g, nm(other(p.slot)));
-    if (mode === 'prost') main = `<p class="pen-k">🍻 ¡Prost, ${name}!</p><p class="pen-d">${line}</p>`;
-    if (mode === 'tragos') main = `<p class="pen-k">🥃 Dos tragos para ${name}</p><p class="pen-d">Y antes del segundo: ${line.charAt(0).toLowerCase() + line.slice(1)}</p><p class="note">Tragos pequeños. Jueguen con moderación y alternen con agua.</p>`;
+    if (mode === 'prost') main = `<p class="pen-k">${ic('glass')} ${esc((S.settings.cheer || '¡Prost!').replace('!', ''))}, ${name}!</p><p class="pen-d">${line}</p>`;
+    if (mode === 'tragos') main = `<p class="pen-k">${ic('glass')} Dos tragos para ${name}</p><p class="pen-d">Y antes del segundo: ${line.charAt(0).toLowerCase() + line.slice(1)}</p><p class="note">Tragos pequeños. Jueguen con moderación y alternen con agua.</p>`;
     const alt = S.settings.alt ? (mode === 'off' ? `<p class="pen-k">Penitencia</p><p class="pen-d">${pen}</p>` : `<p class="pen-alt">Si prefieres no beber: ${pen}</p>`) : '';
     return `<div class="scrim"><div class="pen" role="dialog" aria-label="Penalización">
-      <p class="pen-boom">💥 ${me === p.slot ? 'Perdiste esta ronda.' : `${name} perdió esta ronda.`}</p>
+      <p class="pen-boom">${ic('burst', 'ic--boom')} ${me === p.slot ? 'Perdiste esta ronda.' : `${name} perdió esta ronda.`}</p>
       <p class="label">Penalización</p>${main}${alt}
       <div class="duo"><button class="btn btn--gold" data-a="penok">Listo</button><button class="btn btn--line" data-a="penok">No aplica</button></div>
     </div></div>`;
@@ -936,6 +1147,16 @@ function flashHtml() {
 }
 
 // ───────────── render ─────────────
+// Actualiza el DOM en el lugar (sin reemplazarlo) para que los toques no se pierdan
+function patch(el, html) {
+  if (!window.morphdom) { el.innerHTML = html; return; }
+  const next = el.cloneNode(false);
+  next.innerHTML = html;
+  window.morphdom(el, next, {
+    onBeforeElUpdated: (from, to) => !(from.isEqualNode && from.isEqualNode(to)),
+    onBeforeNodeDiscarded: node => !(node.tagName === 'CANVAS')
+  });
+}
 let tickTimer = null;
 function render() {
   needTick = false;
@@ -950,8 +1171,8 @@ function render() {
     let main = S.screen === 'game' ? viewGame() : S.screen === 'final' ? viewFinal() : viewHome();
     html = `${topbar()}${rings(false)}<main class="stage">${main}</main>`;
   }
-  $app.innerHTML = html + (code && mySlot() ? flashHtml() : '');
-  $ov.innerHTML = code && mySlot() ? viewOverlay() : '';
+  patch($app, html + (code && mySlot() ? flashHtml() : ''));
+  patch($ov, code && mySlot() ? viewOverlay() : '');
   document.body.classList.toggle('in-room', !!(code && mySlot()));
 
   const slot = document.getElementById('canvas-slot');
@@ -963,6 +1184,14 @@ function render() {
   }
   // fin automático de turno en mímica/tabú
   const g = S.g;
+  if (g && (g.k === 'letra' || g.k === 'encadenada') && g.phase === 'play' && g.turn === mySlot() && !ui.ended[g.tid] && ui.deadlines[g.tid] && Date.now() >= ui.deadlines[g.tid]) {
+    ui.ended[g.tid] = true;
+    setTimeout(() => H.chaintime(), 0);
+  }
+  if (g && g.k === 'dibujo' && g.phase === 'play' && g.drawer === mySlot() && !ui.ended[g.round] && ui.deadlines[g.round] && Date.now() >= ui.deadlines[g.round]) {
+    ui.ended[g.round] = true;
+    setTimeout(() => H.dtime(), 0);
+  }
   if (g && (g.k === 'mimica' || g.k === 'tabu') && g.phase === 'play' && g.actor === mySlot() && !ui.ended[g.rid] && ui.deadlines[g.rid] && Date.now() >= ui.deadlines[g.rid]) {
     ui.ended[g.rid] = true;
     setTimeout(() => (g.k === 'mimica' ? H.mimtime() : endActing()), 0);
@@ -1082,6 +1311,7 @@ const H = {
   askreset() { ui.modal = 'reset'; render(); },
   doreset() { ui.modal = null; dispatch({ reset: true }); },
   drink(d) { dispatch({ settings: { drink: d.v } }); },
+  cheer(d) { dispatch({ settings: { cheer: d.v } }); },
   alt(d, el) { dispatch({ settings: { alt: el.checked } }); },
   drawbonus(d, el) { dispatch({ settings: { drawBonus: el.checked } }); },
   adj(d) { dispatch({ score: { [d.k]: +d.d } }); },
@@ -1134,17 +1364,32 @@ const H = {
   ynnext() { H.ynlvl({ l: S.g.lvl }); },
   ynreset() { dispatch({ g: { k: 'yonunca', rid: rid(), lvl: null } }); },
   // dibujo
-  dcat(d) { const w = pick('d-' + d.c, D.dibujo[d.c].words.length); dispatch({ used: w.used, patch: { phase: 'play', cat: d.c, idx: w.idx, rid: rid(), done: false } }); },
+  dcat(d) {
+    const n = D.dibujo[d.c].words.length;
+    const used = S.used['d-' + d.c] || [];
+    let list = shuffle([...Array(n).keys()].filter(i => !used.includes(i)));
+    if (list.length < 8) list = shuffle([...Array(n).keys()]);
+    dispatch({ patch: { phase: 'play', cat: d.c, list, pos: 0, got: 0, rid: rid(), round: rid(), done: false } });
+  },
   color(d) { Draw.setColor(d.c); },
   clear() { Draw.clear(S.g.rid, true); },
   dok() {
     const g = S.g, guesser = other(g.drawer);
     const score = { [guesser]: 1 }; if (S.settings.drawBonus) score[g.drawer] = 1;
-    dispatch({ guard: g.rid, patch: { phase: 'end', done: true, res: `¡${nameOf(guesser)} adivinó!` }, score, flash: S.settings.drawBonus ? '+1 para los dos' : `+1 para ${nameOf(guesser)}`, seed: g.rid + 'ok' });
+    const last = g.pos + 1 >= g.list.length;
+    dispatch({ guard: g.rid, used: ['d-' + g.cat, g.list[g.pos], D.dibujo[g.cat].words.length], score, flash: '¡Adivinado! +1', seed: g.rid + 'ok',
+      patch: last ? { phase: 'end', got: g.got + 1 } : { pos: g.pos + 1, got: g.got + 1, rid: rid() } });
   },
-  dfail() {
-    const g = S.g, guesser = other(g.drawer);
-    dispatch({ guard: g.rid, patch: { phase: 'end', done: true, res: 'No lo adivinó.' }, loser: guesser, seed: g.rid + 'nf' });
+  dpass() {
+    const g = S.g;
+    if (g.pos + 1 >= g.list.length) return H.dtime();
+    dispatch({ guard: g.rid, patch: { pos: g.pos + 1, rid: rid() } });
+  },
+  dtime() {
+    const g = S.g; if (!g || g.phase !== 'play') return;
+    const a = { guard: g.rid, patch: { phase: 'end' } };
+    if (!g.got) { a.loser = other(g.drawer); a.seed = g.round + 'z'; }
+    dispatch(a);
   },
   dnext() { dispatch({ patch: { phase: 'cat', drawer: other(S.g.drawer), rid: rid(), done: false } }); },
   // mímica / tabú
@@ -1179,6 +1424,41 @@ const H = {
   knowsend() { const v = (ui.drafts['know-' + S.g.rid] || '').trim(); if (!v) return toast('Escribe algo antes de enviar.'); dispatch({ answer: { slot: mySlot(), value: v, rid: S.g.rid } }); },
   // onda
   ondasend() { const v = +(ui.drafts['onda-' + S.g.rid] ?? 5); dispatch({ answer: { slot: mySlot(), value: v, rid: S.g.rid } }); },
+  // pestañas
+  tab(d) { ui.tab = d.v; try { localStorage.setItem('enc:tab', d.v); } catch {} render(); },
+  // cadena de letras / encadenada
+  letracat(d) { ui.drafts.letraCat = +d.v; render(); },
+  chainspeed(d) { dispatch({ patch: { speed: +d.v } }); },
+  chainstart() {
+    const g = S.g;
+    let cat = ui.drafts.letraCat ?? 0; if (cat === -1) cat = rnd(D.letraCats.length);
+    dispatch({ patch: { phase: 'play', cat, letter: D.letras[rnd(D.letras.length)], word: rnd(D.encadenada.length), count: 0, rid: rid(), tid: rid(), turn: g.turn || mySlot(), loser: null, done: false } });
+  },
+  chainpass() { const g = S.g; if (g.phase !== 'play') return; dispatch({ guard: g.rid, patch: { count: g.count + 1, turn: other(g.turn), tid: rid() } }); },
+  chainend(slot, why) { const g = S.g; if (!g || g.phase !== 'play') return; dispatch({ guard: g.rid, patch: { phase: 'end', loser: slot, why, done: false }, score: { [other(slot)]: 1 }, loser: slot, seed: g.rid + why }); },
+  chainrep() { H.chainend(S.g.turn, 'repite'); },
+  chaingive() { H.chainend(S.g.turn, 'rinde'); },
+  chaintime() { H.chainend(S.g.turn, 'tiempo'); },
+  chainagain() { const g = S.g; dispatch({ patch: { phase: 'play', letter: D.letras[rnd(D.letras.length)], word: rnd(D.encadenada.length), count: 0, rid: rid(), tid: rid(), turn: g.loser || g.turn, loser: null } }); },
+  chainsetup() { dispatch({ patch: { phase: 'setup', rid: rid() } }); },
+  // experto
+  expgo() { dispatch({ patch: { phase: 'talk', rid: rid(), qs: shuffle([...Array(D.preguntonas.length).keys()]).slice(0, 3), done: false } }); },
+  expask() { dispatch({ patch: { phase: 'ask' } }); },
+  expnext() { const p = pick('exp', D.experto.length); dispatch({ used: p.used, g: { k: 'experto', rid: rid(), turn: other(S.g.turn), phase: 'ready', idx: p.idx } }); },
+  // diccionario
+  diccdeck(d) { const deck = d.v || S.g.deck; const pool = D.diccionario.map((x, i) => i).filter(i => deck === 'todas' || D.diccionario[i].c === deck); const p = pickFrom('dicc-' + deck, pool); dispatch({ used: p.used, g: { k: 'diccionario', rid: rid(), turn: d.v ? (S.g.turn || mySlot()) : other(S.g.turn), deck, idx: p.idx, answers: {} } }); },
+  diccnext() { H.diccdeck({}); },
+  diccreset() { dispatch({ g: { k: 'diccionario', rid: rid(), turn: S.g.turn, deck: null, answers: {} } }); },
+  // improv
+  impgo() { dispatch({ patch: { phase: 'go', rid: rid(), done: false } }); },
+  impwin() { dispatch({ guard: S.g.rid, patch: { done: '¡Escenón! +1 a la sintonía' }, score: { sync: 1 }, flash: '+1 a la sintonía', seed: S.g.rid + 'i' }); },
+  impnext() { dispatch({ g: { k: 'improv', rid: rid(), turn: S.g.turn, phase: 'ready', q: rnd(D.improv.quienes.length), d: rnd(D.improv.donde.length), p: rnd(D.improv.problema.length) } }); },
+  // traductor
+  trgo() { dispatch({ patch: { phase: 'go', rid: rid(), done: false } }); },
+  trmeh() { dispatch({ guard: S.g.rid, patch: { done: 'Nadie entendió nada. Sin puntos.' } }); },
+  trnext() { const p = pick('trad', D.traductor.length); dispatch({ used: p.used, g: { k: 'traductor', rid: rid(), turn: other(S.g.turn), phase: 'ready', idx: p.idx } }); },
+  // entrevista
+  entnext() { const p = pick('fut', D.futuro.length); dispatch({ used: p.used, g: { k: 'entrevista', rid: rid(), turn: other(S.g.turn), idx: p.idx, qs: shuffle([...Array(D.entrevistas.length).keys()]).slice(0, 4) } }); },
   // datos
   datocat(d) { ui.drafts.datoCat = d.v; render(); },
   datomode(d) { ui.drafts.datoMode = d.v; render(); },
@@ -1204,7 +1484,7 @@ const H = {
     const g = S.g, k = 'hist-' + g.rid;
     const text = (ui.drafts[k] || '').trim(); if (!text) return;
     const word = D.historia.palabras[g.word];
-    const has = norm(text).includes(norm(word));
+    const has = hasWord(text, word);
     const w = pick('hist-w', D.historia.palabras.length);
     const nr = rid();
     ui.drafts['hist-' + nr] = '';

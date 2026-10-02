@@ -4,7 +4,7 @@ window.DATA = {
   // ───────────────────────── CARTAS ─────────────────────────
   cartas: {
     nosotros: {
-      name: 'Nosotros', icon: '❤️', blurb: 'Lo que hemos vivido y lo que somos juntos',
+      name: 'Nosotros', blurb: 'Lo que hemos vivido y lo que somos juntos',
       cards: [
         '¿Cuál fue tu primera impresión de mí? Sin suavizarla.',
         '¿Qué momento conmigo recuerdas con más cariño?',
@@ -21,7 +21,7 @@ window.DATA = {
       ]
     },
     absurdas: {
-      name: 'Absurdas', icon: '😂', blurb: 'Preguntas que no sirven para nada',
+      name: 'Absurdas', blurb: 'Preguntas que no sirven para nada',
       cards: [
         'Si mañana despertáramos convertidos en animales, ¿qué animal serías tú y cuál sería yo?',
         '¿Qué objeto absurdo llevarías a una isla desierta?',
@@ -38,7 +38,7 @@ window.DATA = {
       ]
     },
     profundas: {
-      name: 'Profundas', icon: '🧠', blurb: 'Para hablar despacio',
+      name: 'Profundas', blurb: 'Para hablar despacio',
       cards: [
         '¿Qué parte de tu personalidad crees que pocas personas llegan a conocer?',
         '¿Qué cosa de tu futuro te ilusiona realmente?',
@@ -53,7 +53,7 @@ window.DATA = {
       ]
     },
     coquetas: {
-      name: 'Coquetas', icon: '🔥', blurb: 'Un poco de temperatura',
+      name: 'Coquetas', blurb: 'Un poco de temperatura',
       cards: [
         '¿Qué cosa mía te parece especialmente atractiva?',
         '¿Cuál sería nuestra cita perfecta si tuviéramos una noche completamente libre?',
@@ -68,7 +68,7 @@ window.DATA = {
       ]
     },
     retos: {
-      name: 'Retos', icon: '🎯', blurb: 'Hay que hacerlo, no contarlo',
+      name: 'Retos', blurb: 'Hay que hacerlo, no contarlo',
       type: 'reto',
       cards: [
         'Haz una imitación de tu pareja durante 20 segundos.',
@@ -84,7 +84,7 @@ window.DATA = {
       ]
     },
     adiviname: {
-      name: 'Adivíname', icon: '🔮', blurb: 'Elijan en secreto y revelen a la vez',
+      name: 'Adivíname', blurb: 'Elijan en secreto y revelen a la vez',
       type: 'adivina',
       cards: [
         { q: '¿Qué elegiría: una semana en la playa o una semana en la montaña?', a: ['Playa', 'Montaña'] },
@@ -102,7 +102,7 @@ window.DATA = {
       ]
     },
     imagina: {
-      name: 'Imagina que…', icon: '💭', blurb: 'Escenarios para soñar un rato',
+      name: 'Imagina que…', blurb: 'Escenarios para soñar un rato',
       cards: [
         'Tenemos 10 millones de dólares y debemos gastarlos juntos en 24 horas. ¿Qué hacemos?',
         'Podemos aparecer instantáneamente en cualquier lugar del mundo. ¿Dónde aparecemos?',
@@ -117,7 +117,7 @@ window.DATA = {
       ]
     },
     duelo: {
-      name: 'Duelo', icon: '🏆', blurb: 'Siempre hay un ganador',
+      name: 'Duelo', blurb: 'Siempre hay un ganador',
       type: 'duelo',
       cards: [
         'Cada uno tiene 30 segundos para explicar por qué debería elegir la próxima película.',
@@ -219,7 +219,7 @@ window.DATA = {
 
   // ───────────────── SIN FILTRO ─────────────────
   sinfiltro: {
-    1: { name: 'Suave', chili: '🌶️', cards: [
+    1: { name: 'Suave', cards: [
       '¿Qué fue lo primero que te llamó la atención de mí físicamente?',
       '¿Cuál es tu recuerdo favorito de una mañana juntos?',
       '¿Qué perfume o aroma mío reconocerías con los ojos cerrados?',
@@ -233,7 +233,7 @@ window.DATA = {
       'Dime algo que te encantaría escuchar de mí más seguido.',
       '¿En qué lugar público te habría encantado besarme?'
     ]},
-    2: { name: 'Atrevido', chili: '🌶️🌶️', cards: [
+    2: { name: 'Atrevido', cards: [
       '¿Qué es lo que más te provoca de mí cuando estoy cerca?',
       'Describe nuestra próxima cita ideal… desde que se cierra la puerta.',
       '¿Qué te gustaría que te susurrara al oído?',
@@ -247,7 +247,7 @@ window.DATA = {
       '¿Lugar más inesperado donde te gustaría besarme?',
       'Cuéntame un sueño conmigo que no me hayas contado.'
     ]},
-    3: { name: 'Sin filtro', chili: '🌶️🌶️🌶️', cards: [
+    3: { name: 'Sin filtro', cards: [
       '¿Qué es lo primero que harías si pudiéramos estar juntos esta noche?',
       'Describe con tres palabras cómo te gusta que te toquen.',
       '¿Qué fantasía tienes conmigo que todavía no me has contado?',
@@ -535,8 +535,24 @@ window.DATA = {
   ],
 
   // ───────────────── ¿DATO REAL O INVENTADO? ─────────────────
-  datoCats: { historia: 'Historia', lengua: 'Lengua', ciencia: 'Ciencia', tierra: 'Tierra', espacio: 'Espacio', animales: 'Animales', cuerpo: 'Cuerpo humano', arte: 'Arte' },
+  datoCats: { historia: 'Historia', lengua: 'Lengua', ciencia: 'Ciencia', tierra: 'Tierra', espacio: 'Espacio', animales: 'Animales', cuerpo: 'Cuerpo humano', arte: 'Arte', venezuela: 'Venezuela', alemania: 'Alemania' },
   datos: [
+    { c: 'venezuela', t: 'Venezuela tiene la cascada más alta del mundo.', real: true, e: 'El Salto Ángel cae unos 979 metros, en el Parque Nacional Canaima.' },
+    { c: 'venezuela', t: 'En Venezuela está el lugar con más rayos del planeta.', real: true, e: 'El relámpago del Catatumbo, sobre el lago de Maracaibo, cae cientos de noches al año.' },
+    { c: 'venezuela', t: 'Venezuela tiene las mayores reservas probadas de petróleo del mundo.', real: true, e: 'Superan incluso a las de Arabia Saudita.' },
+    { c: 'venezuela', t: 'El nombre «Venezuela» significa «pequeña Venecia».', real: true, e: 'A los exploradores les recordaron a Venecia las casas sobre pilotes en el lago de Maracaibo.' },
+    { c: 'venezuela', t: 'En Venezuela la hallaca se come sobre todo en Semana Santa.', real: false, e: 'Es la comida típica de Navidad: masa de maíz rellena y envuelta en hojas de plátano.' },
+    { c: 'venezuela', t: 'La bandera de Venezuela tiene cinco estrellas.', real: false, e: 'Tiene ocho desde 2006.' },
+    { c: 'venezuela', t: 'En Venezuela, las «cotufas» son un tipo de pastel.', real: false, e: 'Son palomitas de maíz.' },
+    { c: 'venezuela', t: 'El Pico Bolívar es la montaña más alta de Venezuela.', real: true, e: 'Mide unos 4.980 metros, en la cordillera de Mérida.' },
+    { c: 'alemania', t: 'Muchas autopistas alemanas no tienen límite general de velocidad.', real: true, e: 'Hay tramos con límite, pero en muchos solo hay una velocidad «recomendada» de 130 km/h.' },
+    { c: 'alemania', t: 'En Alemania da mala suerte felicitar un cumpleaños por adelantado.', real: true, e: 'Es una superstición muy extendida: se felicita el día o después.' },
+    { c: 'alemania', t: 'El Oktoberfest de Múnich empieza en septiembre.', real: true, e: 'Arranca a mediados o fines de septiembre y termina a comienzos de octubre.' },
+    { c: 'alemania', t: 'Los ositos de gominola los inventó una empresa alemana.', real: true, e: 'Haribo, fundada en Bonn en 1920, los popularizó en los años veinte.' },
+    { c: 'alemania', t: 'La cultura del pan alemán está reconocida como patrimonio cultural inmaterial.', real: true, e: 'Se incluyó en el inventario nacional alemán de la UNESCO en 2014. Hay más de 3.000 tipos de pan.' },
+    { c: 'alemania', t: 'En Alemania la fiesta principal de Navidad es el 25 de diciembre por la noche.', real: false, e: 'Lo fuerte es el 24, Heiligabend, cuando se abren los regalos.' },
+    { c: 'alemania', t: 'Berlín fue la capital de Alemania Occidental.', real: false, e: 'La capital de Alemania Occidental fue Bonn.' },
+    { c: 'alemania', t: 'En Alemania puedes recibir una multa por quedarte sin gasolina en la autopista.', real: true, e: 'Detenerse sin necesidad en la autopista está prohibido, y quedarse sin combustible cuenta como algo evitable.' },
     { c: 'animales', t: 'Los pulpos tienen tres corazones.', real: true, e: 'Dos bombean sangre a las branquias y uno al resto del cuerpo.' },
     { c: 'espacio', t: 'Un día en Venus dura más que un año en Venus.', real: true, e: 'Venus tarda unos 243 días terrestres en girar sobre sí mismo y unos 225 en dar la vuelta al Sol.' },
     { c: 'animales', t: 'Los flamencos son rosados por lo que comen.', real: true, e: 'Los pigmentos de las algas y crustáceos que comen tiñen sus plumas.' },
@@ -642,19 +658,19 @@ window.DATA = {
     { q: '¿Qué es más grande?', a: 'África', b: 'Rusia', ok: 'a', e: 'África tiene más de 30 millones de km²; Rusia, unos 17.' },
     { q: '¿Qué es más denso?', a: 'El oro', b: 'El plomo', ok: 'a', e: 'El oro pesa unos 19,3 g por cm³; el plomo, unos 11,3.' },
     { q: '¿Qué tiene más agua, en proporción?', a: 'Una persona', b: 'Un pepino', ok: 'b', e: 'El pepino es cerca de 95 % agua; una persona adulta, alrededor del 60 %.' },
-    { q: '¿Qué universidad es más antigua?', a: 'La de Córdoba', b: 'Harvard', ok: 'a', e: 'La Universidad de Córdoba se fundó en 1613; Harvard, en 1636.' },
+    { q: '¿Qué universidad es más antigua?', a: 'La de Córdoba', b: 'Harvard', ok: 'a', e: 'La Universidad Nacional de Córdoba (Argentina) se fundó en 1613; Harvard, en 1636.' },
     { q: '¿Qué cordillera es más larga?', a: 'Los Andes', b: 'El Himalaya', ok: 'a', e: 'Los Andes tienen unos 7.000 km; el Himalaya, unos 2.400.' },
     { q: '¿Qué montaña es más alta?', a: 'El Aconcagua', b: 'El Kilimanjaro', ok: 'a', e: 'El Aconcagua mide unos 6.960 m; el Kilimanjaro, unos 5.900.' },
     { q: '¿Qué es más ancho?', a: 'La Luna', b: 'Australia', ok: 'b', e: 'Australia mide unos 4.000 km de ancho; la Luna, unos 3.470 de diámetro.' },
-    { q: '¿Qué está más cerca de Córdoba?', a: 'La Estación Espacial, cuando pasa por arriba', b: 'Buenos Aires', ok: 'a', e: 'La Estación orbita a unos 400 km; Buenos Aires está a unos 650 km por ruta.' },
+    { q: '¿Qué está más cerca de Córdoba, Argentina?', a: 'La Estación Espacial, cuando pasa por arriba', b: 'Buenos Aires', ok: 'a', e: 'La Estación orbita a unos 400 km; Buenos Aires está a unos 650 km por ruta.' },
     { q: '¿Quién tiene más cromosomas?', a: 'Un ser humano', b: 'Una papa', ok: 'b', e: 'La papa tiene 48; nosotros, 46.' },
     { q: '¿Qué viaja más rápido?', a: 'La luz en el aire', b: 'La luz en el agua', ok: 'a', e: 'En el agua la luz va cerca de un 25 % más lenta.' },
     { q: '¿Qué es más rápido?', a: 'Un guepardo', b: 'Un caballo de carreras', ok: 'a', e: 'El guepardo supera los 100 km/h en sprints cortos; un caballo ronda los 70.' },
-    { q: '¿Qué está más lejos de Córdoba?', a: 'Alemania', b: 'Japón', ok: 'b', e: 'Japón queda a unos 18.000 km; Alemania, a unos 11.500.' }
+    { q: '¿Qué está más lejos de Córdoba, Argentina?', a: 'Alemania', b: 'Japón', ok: 'b', e: 'Japón queda a unos 18.000 km; Alemania, a unos 11.500.' }
   ],
   // ───────────────── YO NUNCA NUNCA ─────────────────
   yonunca: {
-    1: { name: 'Suave', chili: '🌶️', cards: [
+    1: { name: 'Suave', cards: [
       'Yo nunca nunca he fingido estar enfermo o enferma para no ir a algo.',
       'Yo nunca nunca he stalkeado a un ex en redes.',
       'Yo nunca nunca he llorado con una película animada.',
@@ -666,7 +682,7 @@ window.DATA = {
       'Yo nunca nunca me he reído en un momento serio.',
       'Yo nunca nunca he regalado algo que me regalaron.'
     ]},
-    2: { name: 'Atrevido', chili: '🌶️🌶️', cards: [
+    2: { name: 'Atrevido', cards: [
       'Yo nunca nunca he besado a alguien en la primera cita.',
       'Yo nunca nunca he escrito un mensaje atrevido y lo he borrado antes de mandarlo.',
       'Yo nunca nunca he pensado en ti en un momento muy inoportuno.',
@@ -678,7 +694,7 @@ window.DATA = {
       'Yo nunca nunca he mirado tus fotos viejas a escondidas.',
       'Yo nunca nunca he ensayado frente al espejo lo que te iba a decir.'
     ]},
-    3: { name: 'Sin filtro', chili: '🌶️🌶️🌶️', cards: [
+    3: { name: 'Sin filtro', cards: [
       'Yo nunca nunca he tenido una cita que terminó mejor de lo esperado.',
       'Yo nunca nunca he imaginado nuestro reencuentro con todo detalle.',
       'Yo nunca nunca he dicho algo atrevido en voz alta y me he arrepentido.',
@@ -712,24 +728,146 @@ window.DATA = {
       'Habíamos ganado un concurso al que nunca nos inscribimos.',
       'La mudanza iba bien hasta que abrimos la caja que decía "no abrir".'
     ],
-    palabras: ['pingüino', 'beso', 'volcán', 'secreto', 'pasaporte', 'tormenta', 'chocolate', 'espía', 'abuela', 'tango',
-      'mapa', 'luna', 'empanada', 'disfraz', 'tren', 'sirena', 'llave', 'karaoke', 'fantasma', 'vino',
-      'cohete', 'gato', 'sombrero', 'tesoro', 'carta', 'faro', 'paraguas', 'almohada', 'dragón', 'telescopio']
+    palabras: ['ornitorrinco', 'serendipia', 'petricor', 'trampantojo', 'batiburrillo', 'zascandil', 'mequetrefe', 'tiquismiquis', 'zarigüeya', 'otorrinolaringólogo', 'esternocleidomastoideo', 'cachivache', 'chirimbolo', 'zurriburri', 'berenjenal', 'papiroflexia', 'tarambana', 'cascarrabias', 'trapisonda', 'chascarrillo', 'cachalote', 'garrapiñada', 'abracadabra', 'cuchufleta', 'gorgorito', 'pachulí', 'zangoloteo', 'pamplinas', 'chiripa', 'barullo', 'calcetín filósofo', 'tostadora existencial', 'pingüino contable', 'nube con hipo', 'jirafa en patineta', 'lechuga rebelde', 'trampolín cuántico', 'mostaza interplanetaria', 'unicornio en pantuflas', 'sopa de relojes', 'dinosaurio vegano', 'pulpo notario', 'bigote de morsa', 'espagueti telepático', 'alpaca diplomática', 'sombrero de flan', 'caracol a reacción', 'tortuga influencer', 'helado de ajo', 'sirena con resaca']
   },
+
+  // ───────────────── CADENA DE LETRAS ─────────────────
+  letraCats: [
+    'Libre: cualquier palabra', 'Nombres de personas', 'Países y ciudades', 'Animales', 'Comidas', 'Frutas y verduras', 'Marcas',
+    'Cosas de una cocina', 'Profesiones', 'Películas o series', 'Cosas que llevarías a la playa', 'Excusas para no ir al gimnasio',
+    'Cosas que hacen ruido', 'Palabras en alemán', 'Insultos cariñosos', 'Cosas que se rompen', 'Verbos', 'Adjetivos para describirme',
+    'Cosas que hay en el cielo', 'Lugares para una cita', 'Partes del cuerpo', 'Personajes famosos', 'Deportes', 'Cosas que dan vergüenza',
+    'Cosas rojas', 'Cosas que se compran en una farmacia', 'Cosas que harías en Alemania', 'Ingredientes de una arepa imposible', 'Palabras venezolanas', 'Comidas venezolanas', 'Cosas típicas de Alemania', 'Palabras en alemán que suenan a insulto'
+  ],
+  letras: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'L', 'M', 'N', 'O', 'P', 'R', 'S', 'T', 'U', 'V'],
+
+  // ───────────────── PALABRA ENCADENADA ─────────────────
+  encadenada: ['mariposa', 'chocolate', 'pelota', 'ventana', 'camino', 'tomate', 'zapato', 'cereza', 'botella', 'lechuga',
+    'murciélago', 'pirata', 'guitarra', 'manzana', 'helado', 'volante', 'semilla', 'caballo', 'tortuga', 'paloma'],
+
+  // ───────────────── EXPERTO EN NADA ─────────────────
+  experto: [
+    'La historia secreta de las cucharas', 'Por qué los gatos odian los lunes', 'Cómo hablar con las plantas de interior',
+    'El impacto de las medias perdidas en la economía mundial', 'La vida social de las palomas de plaza', 'Técnicas avanzadas para doblar sábanas con elástico',
+    'El lenguaje secreto de los pingüinos', 'Por qué el pan siempre cae del lado de la mermelada', 'Arqueología de los cajones de la cocina',
+    'Psicología de los peluches abandonados', 'La rivalidad histórica entre el tenedor y los palillos', 'Cómo sobrevivir a una invasión de cucarachas con modales',
+    'El arte milenario de esperar el colectivo', 'Neurociencia del antojo de medianoche', 'Geopolítica del control remoto',
+    'Por qué las nubes tienen forma de cosas', 'La ética de comerse la última empanada', 'Historia del bostezo contagioso',
+    'Cómo entrenar a un caracol para competencias', 'Las emociones de los semáforos', 'Física cuántica del calcetín impar',
+    'Ingeniería de la torre de platos sucios', 'El misterio de los audios de WhatsApp de 7 minutos', 'Gastronomía de los dinosaurios',
+    'Cómo enamorar a un alemán con una arepa', 'Por qué en Alemania el tren llega a la hora y en Venezuela «ahorita voy»', 'El impacto cultural de la hallaca en Europa', 'Teoría de la relatividad del «ahorita» venezolano'
+  ],
+  preguntonas: ['¿Y eso cómo lo comprobó científicamente?', '¿Quién financia su investigación?', '¿Qué opina su madre de todo esto?',
+    '¿Cuál fue su mayor fracaso en este campo?', '¿Eso no contradice lo que dijo en 2019?', '¿Qué le diría a quienes la llaman fraude?',
+    '¿Tiene alguna prueba física que mostrarnos a cámara?', '¿Cuánto cobra por una consulta?'],
+
+  // ───────────────── DICCIONARIO MENTIROSO ─────────────────
+  diccionario: [
+    { c: 'raras', w: 'Petricor', d: 'Olor que produce la lluvia al caer sobre suelos secos.' },
+    { c: 'raras', w: 'Trampantojo', d: 'Trampa o ilusión con que se engaña a alguien haciéndole ver lo que no es; técnica de pintura que simula la realidad.' },
+    { c: 'raras', w: 'Zascandil', d: 'Persona ligera, entrometida y enredadora.' },
+    { c: 'raras', w: 'Serendipia', d: 'Hallazgo valioso que se produce de manera accidental o casual.' },
+    { c: 'raras', w: 'Batiburrillo', d: 'Mezcla de cosas que no tienen relación entre sí.' },
+    { c: 'raras', w: 'Mequetrefe', d: 'Persona entrometida, bulliciosa y de poco provecho.' },
+    { c: 'raras', w: 'Chirimbolo', d: 'Utensilio u objeto de forma rara o complicada que no se sabe bien cómo nombrar.' },
+    { c: 'raras', w: 'Zarandaja', d: 'Cosa menuda, sin valor, que se mezcla con lo importante.' },
+    { c: 'raras', w: 'Hipocorístico', d: 'Nombre en forma diminutiva o abreviada que se usa como apelativo cariñoso, como Pepe o Andre.' },
+    { c: 'raras', w: 'Inefable', d: 'Que no se puede explicar con palabras.' },
+    { c: 'raras', w: 'Desiderátum', d: 'Aspiración o deseo que todavía no se ha cumplido.' },
+    { c: 'raras', w: 'Abulia', d: 'Falta de voluntad o de energía para hacer algo.' },
+    { c: 'raras', w: 'Sicofante', d: 'Impostor o calumniador.' },
+    { c: 'raras', w: 'Melifluo', d: 'Excesivamente dulce, suave o delicado, sobre todo al hablar.' },
+    { c: 'raras', w: 'Ósculo', d: 'Beso de afecto o de respeto.' },
+    { c: 'raras', w: 'Sempiterno', d: 'Que durará siempre; que no tiene fin.' },
+    { c: 'raras', w: 'Arrebol', d: 'Color rojo de las nubes iluminadas por los rayos del sol.' },
+    { c: 'raras', w: 'Conticinio', d: 'Hora de la noche en que todo está en silencio.' },
+    { c: 'raras', w: 'Lipotimia', d: 'Pérdida pasajera del sentido, un desmayo.' },
+    { c: 'raras', w: 'Vagido', d: 'Gemido o llanto del recién nacido.' },
+    { c: 'raras', w: 'Cuchipanda', d: 'Comida que comparten varias personas con alegría y jolgorio.' },
+    { c: 'raras', w: 'Epígono', d: 'Persona que sigue las huellas de otra, especialmente en arte o ciencia.' },
+    { c: 'raras', w: 'Acendrado', d: 'Puro y sin mancha ni defecto.' },
+    { c: 'raras', w: 'Ubérrimo', d: 'Muy abundante y fértil.' },
+    { c: 'raras', w: 'Apapachar', d: 'Abrazar o acariciar con cariño.' },
+    { c: 'raras', w: 'Jeremiquear', d: 'Lloriquear o quejarse insistentemente.' },
+    { c: 'raras', w: 'Garrafal', d: 'Dicho de un error o una falta: muy grande.' },
+    { c: 'raras', w: 'Efímero', d: 'Que dura muy poco.' },
+    { c: 'venezuela', w: 'Ladilla', d: 'Persona o situación fastidiosa y aburrida. «Qué ladilla hacer la fila».' },
+    { c: 'venezuela', w: 'Burda', d: 'Mucho, muy. «Esa película está burda de buena».' },
+    { c: 'venezuela', w: 'Cotufas', d: 'Palomitas de maíz.' },
+    { c: 'venezuela', w: 'Cambur', d: 'Banana.' },
+    { c: 'venezuela', w: 'Patilla', d: 'Sandía.' },
+    { c: 'venezuela', w: 'Chimbo', d: 'De mala calidad o que salió mal.' },
+    { c: 'venezuela', w: 'Jalabolas', d: 'Persona aduladora, que adula para conseguir algo.' },
+    { c: 'venezuela', w: 'Coroto', d: 'Cualquier cosa u objeto, sobre todo si son varios: «recoge tus corotos».' },
+    { c: 'venezuela', w: 'Echar los perros', d: 'Coquetear o cortejar a alguien.' },
+    { c: 'venezuela', w: 'Sifrino', d: 'Persona presumida que se da aires de clase alta.' },
+    { c: 'venezuela', w: 'Chinchorro', d: 'Hamaca tejida, típica de los llanos y de la costa.' },
+    { c: 'venezuela', w: 'Pasapalo', d: 'Bocadito o aperitivo que se sirve en fiestas.' },
+    { c: 'venezuela', w: 'Ratón', d: 'Resaca después de una noche de fiesta.' },
+    { c: 'venezuela', w: 'Catire', d: 'Persona rubia.' },
+    { c: 'venezuela', w: 'Zaperoco', d: 'Lío, alboroto o desorden.' },
+    { c: 'venezuela', w: 'Ñapa', d: 'Lo que el vendedor regala de más al cliente.' },
+    { c: 'venezuela', w: 'Mamadera de gallo', d: 'Broma o tomadura de pelo.' },
+    { c: 'venezuela', w: 'Pelar bola', d: 'Estar sin dinero.' },
+    { c: 'venezuela', w: 'Guayabo', d: 'Tristeza y nostalgia por un amor que se terminó.' },
+    { c: 'venezuela', w: 'Jojoto', d: 'Mazorca de maíz tierno.' },
+    { c: 'alemania', w: 'Fernweh', d: 'Nostalgia por lugares lejanos que nunca visitaste; ganas intensas de viajar.' },
+    { c: 'alemania', w: 'Schadenfreude', d: 'Alegría que se siente por la desgracia de otro.' },
+    { c: 'alemania', w: 'Torschlusspanik', d: 'Miedo a que se acabe el tiempo para cumplir tus metas. Literalmente, «pánico al cierre de las puertas».' },
+    { c: 'alemania', w: 'Fremdschämen', d: 'Vergüenza ajena.' },
+    { c: 'alemania', w: 'Ohrwurm', d: 'Canción que se te pega y no sale de tu cabeza. Literalmente, «gusano de oreja».' },
+    { c: 'alemania', w: 'Feierabend', d: 'El momento en que termina la jornada de trabajo y empieza el tiempo libre.' },
+    { c: 'alemania', w: 'Gemütlichkeit', d: 'Sensación de calidez, comodidad y estar a gusto.' },
+    { c: 'alemania', w: 'Backpfeifengesicht', d: 'Una cara que pide a gritos una cachetada.' },
+    { c: 'alemania', w: 'Kopfkino', d: 'Imaginarse escenas enteras en la cabeza. Literalmente, «cine mental».' },
+    { c: 'alemania', w: 'Treppenwitz', d: 'La respuesta ingeniosa que se te ocurre cuando ya es demasiado tarde.' },
+    { c: 'alemania', w: 'Verschlimmbessern', d: 'Empeorar algo justo al intentar mejorarlo.' },
+    { c: 'alemania', w: 'Handschuhschneeballwerfer', d: 'Alguien que critica desde una posición cómoda. Literalmente, «el que tira bolas de nieve con guantes».' },
+    { c: 'alemania', w: 'Zungenbrecher', d: 'Trabalenguas. Literalmente, «rompelenguas».' },
+    { c: 'alemania', w: 'Weltschmerz', d: 'Tristeza o cansancio por cómo está el mundo.' },
+    { c: 'alemania', w: 'Sitzfleisch', d: 'Capacidad de aguantar sentado mucho tiempo con una tarea. Literalmente, «carne para sentarse».' },
+    { c: 'alemania', w: 'Schnapsidee', d: 'Una idea absurda que solo parece buena después de unos tragos.' },
+    { c: 'alemania', w: 'Innerer Schweinehund', d: 'La pereza interior que te impide hacer algo. Literalmente, «el perro-cerdo interior».' },
+    { c: 'alemania', w: 'Purzelbaum', d: 'Voltereta. Literalmente, «árbol que da tumbos».' }
+  ],
+
+  // ───────────────── SÍ, Y ADEMÁS… ─────────────────
+  improv: {
+    quienes: ['dos espías jubilados', 'una sirena y su contador', 'dos astronautas perdidos', 'un vampiro vegano y su terapeuta', 'dos abuelas campeonas de karate',
+      'un pirata y una influencer', 'dos robots que se acaban de enamorar', 'un detective y su gato parlante', 'dos fantasmas tímidos', 'una bruja y un repartidor de pizza',
+      'dos dinosaurios en su primera cita', 'un mago sin trucos y su asistente'],
+    donde: ['un supermercado de Hamburgo', 'un ascensor atascado', 'la cocina de un crucero', 'un museo cerrado de noche', 'una estación de servicio en la Patagonia',
+      'el último vagón de un tren', 'una peluquería en la Luna', 'una boda en Caracas', 'un mercado de Córdoba', 'la sala de espera del dentista', 'un iglú', 'un karaoke vacío'],
+    problema: ['tienen que esconder un pato', 'nadie recuerda cómo llegaron', 'alguien se comió el último alfajor', 'descubren que son mellizos', 'se cortó la luz',
+      'tienen 10 minutos para casarse', 'perdieron un mapa del tesoro', 'el gato habla y está enojado', 'tienen que ganar un concurso de baile', 'llega la suegra']
+  },
+
+  // ───────────────── TRADUCTOR ─────────────────
+  traductor: ['Pedir una pizza en un restaurante de Marte', 'Declararle amor a alguien en una ópera', 'Quejarse del clima en el aeropuerto', 'Dar las noticias del clima en un planeta lejano',
+    'Discutir el precio de un camello en un mercado', 'Explicar una receta de cocina secreta', 'Dar un discurso de boda emocionado', 'Pedir perdón por romper un jarrón valioso',
+    'Narrar un partido de fútbol', 'Venderle una aspiradora a un vikingo', 'Explicar por qué llegaste tarde', 'Dar instrucciones para armar un mueble'],
+
+  // ───────────────── ENTREVISTA DESDE EL FUTURO ─────────────────
+  futuro: ['inventar el queso que nunca se derrite', 'ser la primera persona en casarse en la Luna', 'ganar el mundial de siestas', 'fundar un país en una isla flotante',
+    'traducir el idioma de los gatos', 'abrir el primer restaurante bajo el mar', 'descubrir un dinosaurio en el jardín', 'escribir el libro más vendido del siglo',
+    'enseñar física a delfines', 'construir una casa con forma de arepa', 'ser presidente o presidenta de la galaxia', 'cruzar el Atlántico en bicicleta acuática'],
+  entrevistas: ['¿Cómo empezó todo?', '¿Cuál fue el peor momento del camino?', '¿Quién fue la persona clave en su éxito?', '¿Qué le diría a su yo de 2026?',
+    '¿Cuál es su rutina de la mañana?', '¿Qué rumor sobre usted es falso?', '¿Qué hace con tanto dinero?', '¿Se arrepiente de algo?', '¿Cuál es su próximo proyecto?',
+    '¿Es verdad que tiene un pacto con una paloma?'],
 
   // ───────────────── CUPONES ─────────────────
   cupones: [
-    { i: '🎬', t: 'Mi peli favorita', d: 'La vemos juntos en videollamada, sin quejas ni celular.' },
-    { i: '🗓️', t: 'Tú planeas la próxima cita', d: 'Quien perdió organiza la próxima cita virtual de principio a fin.' },
-    { i: '🍝', t: 'Yo elijo la cena', d: 'En la próxima llamada los dos cenan lo que yo diga.' },
-    { i: '🎵', t: 'Una playlist para mí', d: 'Mínimo diez canciones, cada una con su porqué.' },
-    { i: '💌', t: 'Carta en audio', d: 'Un mensaje de voz de al menos dos minutos, solo para mí.' },
-    { i: '☀️', t: 'Semana de buenos días', d: 'Siete días seguidos de mensaje de buenos días antes de las 10.' },
-    { i: '📺', t: 'Maratón de mi serie', d: 'Tres capítulos de lo que yo quiera, en videollamada.' },
-    { i: '🎤', t: 'Serenata por cámara', d: 'Me cantas una canción entera, de principio a fin.' },
-    { i: '✈️', t: 'Plan de reencuentro', d: 'Quien perdió investiga vuelos y arma una propuesta para vernos.' },
-    { i: '🎮', t: 'Yo elijo el próximo juego', d: 'La próxima noche de juegos empieza con lo que yo diga.' },
-    { i: '👗', t: 'Código de vestimenta', d: 'En la próxima llamada te vistes como yo te pida.' },
-    { i: '🙊', t: 'Un "sí" sin preguntas', d: 'Para una petición razonable, cuando yo quiera.' }
+    { t: 'Mi peli favorita', d: 'La vemos juntos en videollamada, sin quejas ni celular.' },
+    { t: 'Tú planeas la próxima cita', d: 'Quien perdió organiza la próxima cita virtual de principio a fin.' },
+    { t: 'Yo elijo la cena', d: 'En la próxima llamada los dos cenan lo que yo diga.' },
+    { t: 'Una playlist para mí', d: 'Mínimo diez canciones, cada una con su porqué.' },
+    { t: 'Carta en audio', d: 'Un mensaje de voz de al menos dos minutos, solo para mí.' },
+    { t: 'Semana de buenos días', d: 'Siete días seguidos de mensaje de buenos días antes de las 10.' },
+    { t: 'Maratón de mi serie', d: 'Tres capítulos de lo que yo quiera, en videollamada.' },
+    { t: 'Serenata por cámara', d: 'Me cantas una canción entera, de principio a fin.' },
+    { t: 'Plan de reencuentro', d: 'Quien perdió investiga vuelos y arma una propuesta para vernos.' },
+    { t: 'Yo elijo el próximo juego', d: 'La próxima noche de juegos empieza con lo que yo diga.' },
+    { t: 'Código de vestimenta', d: 'En la próxima llamada te vistes como yo te pida.' },
+    { t: 'Un "sí" sin preguntas', d: 'Para una petición razonable, cuando yo quiera.' }
   ]
 };
